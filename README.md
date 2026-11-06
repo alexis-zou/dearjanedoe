@@ -41,9 +41,10 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
       shell, shared contracts (`lib/types.ts`, `lib/api.ts`, `CONTRACTS.md`). *Pushed.*
 - [x] **Agent A — AI core:** grounding corpus (federal + 3 schools), trauma-informed
       system prompt / guardrails, `app/api/chat/route.ts` (validation + prompt-cached
-      corpus + crisis defense-in-depth), `.env.example`. Route verified: validation +
-      error paths pass; **live LLM round-trip pending a real `ANTHROPIC_API_KEY`** in
-      `.env.local`.
+      corpus + crisis defense-in-depth), `.env.example`. **Live round-trip verified:**
+      grounded replies, "should I report?" guardrail, crisis escalation (988/RAINN),
+      school grounding (Stanford office), unknown-school refusal, and prompt cache
+      hitting (cacheRead≈8k). Server logs token/cache usage (no message content).
 - [x] **Agent B — Crisis + safety:** `/crisis` page (12 lines, text vs call, one-tap
       `tel:`/`sms:`), Get Help Now modal (RAINN / 988 / Crisis Text Line), Quick Exit,
       first-visit Disclaimer (sessionStorage, not localStorage). Numbers verified against

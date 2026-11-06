@@ -137,6 +137,13 @@ export async function POST(req: Request) {
       .join("")
       .trim();
 
+    // Token counts only (no message content) — lets us watch spend + cache hit rate.
+    const u = resp.usage;
+    console.log(
+      `[/api/chat] usage in=${u.input_tokens} out=${u.output_tokens} ` +
+        `cacheRead=${u.cache_read_input_tokens ?? 0} cacheWrite=${u.cache_creation_input_tokens ?? 0}`,
+    );
+
     return Response.json({ reply });
   } catch (err) {
     console.error("[/api/chat] Anthropic error:", err);
