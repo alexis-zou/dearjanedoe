@@ -1,34 +1,45 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState } from "react";
 import { isIsoDate } from "@/lib/caseclock/businessDays";
 import type { CaseClockState, ProcessId } from "@/lib/caseclock/types";
 
-export const PROCESSES: { id: ProcessId; label: string; dateLabel: string; hint: string }[] = [
+export const PROCESSES: {
+  id: ProcessId;
+  label: string;
+  description: string;
+  dateLabel: string;
+  hint: string;
+}[] = [
   {
     id: "investigation",
     label: "Formal investigation",
-    dateLabel: "When did you get written notice of the charges?",
-    hint: "The date on OPHD's written notice. The investigation timeframe counts from here.",
+    description: "OPHD is investigating and sent a written notice of the charges.",
+    dateLabel: "When did you get the written notice of the charges?",
+    hint: "Use the date on OPHD's notice. If you're not sure, a close guess is fine. You can change it later.",
   },
   {
     id: "alternative-resolution",
     label: "Alternative Resolution",
-    dateLabel: "When did you get written notice that Alternative Resolution started?",
-    hint: "The date on OPHD's written notice that the process began.",
+    description: "A voluntary process without an investigation.",
+    dateLabel: "When did you get the notice that Alternative Resolution started?",
+    hint: "Use the date on OPHD's notice. You can change it later.",
   },
   {
     id: "dismissal",
     label: "A dismissal notice",
+    description: "You got a notice that allegations were dismissed.",
     dateLabel: "When did you get the notice of dismissal?",
-    hint: "The date on the notice. The appeal window counts from here.",
+    hint: "The appeal window counts from this date.",
   },
 ];
 
 const inputClass =
-  "mt-1 block min-h-12 w-full max-w-xs rounded-xl border border-border bg-surface px-3 py-2 text-base text-foreground";
-const pillClass =
-  "flex min-h-12 cursor-pointer items-center gap-3 rounded-full border border-border bg-surface/70 px-4 py-2 text-foreground transition-colors hover:border-primary has-checked:border-primary has-checked:bg-primary-soft has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring";
+  "mt-2 block min-h-12 w-full max-w-xs rounded-xl border border-border bg-surface px-3 py-2 text-base text-foreground";
+const primaryBtn =
+  "min-h-12 rounded-full bg-primary px-6 py-2 font-medium text-primary-contrast hover:bg-primary-hover";
+const secondaryBtn =
+  "min-h-12 rounded-full border border-border bg-surface/70 px-6 py-2 font-medium text-foreground hover:border-primary";
 
 type Props = {
   initial: CaseClockState | null;
@@ -37,7 +48,9 @@ type Props = {
   onCancel?: () => void;
 };
 
+/** Three short steps instead of one long form: what → when → anything else. */
 export default function SetupForm({ initial, today, onSubmit, onCancel }: Props) {
+  const [step, setStep] = useState<1 | 2 | 3>(initial ? 2 : 1);
   const [process, setProcess] = useState<ProcessId>(initial?.process ?? "investigation");
   const [startDate, setStartDate] = useState(initial?.startDate ?? "");
   const [lastUpdateDate, setLastUpdateDate] = useState(initial?.lastUpdateDate ?? "");
@@ -46,23 +59,25 @@ export default function SetupForm({ initial, today, onSubmit, onCancel }: Props)
   const [error, setError] = useState("");
   const startId = useId();
   const updateId = useId();
-  const errorId = useId();
 
   const chosen = PROCESSES.find((p) => p.id === process) ?? PROCESSES[0];
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  function checkDates(): boolean {
     if (!isIsoDate(startDate) || startDate > today) {
       setError("Enter a date on or before today.");
-      return;
+      return false;
     }
     if (process === "investigation" && lastUpdateDate) {
       if (!isIsoDate(lastUpdateDate) || lastUpdateDate > today || lastUpdateDate < startDate) {
-        setError("The last update date needs to be between the notice date and today.");
-        return;
+        setError("The update date needs to be between the notice date and today.");
+        return false;
       }
     }
     setError("");
+    return true;
+  }
+
+  function finish() {
     onSubmit({
       school: "berkeley",
       process,
@@ -70,129 +85,155 @@ export default function SetupForm({ initial, today, onSubmit, onCancel }: Props)
       lastUpdateDate: process === "investigation" && lastUpdateDate ? lastUpdateDate : undefined,
       extensionNoticed: process !== "dismissal" && extensionNoticed,
       policeReport,
-      // Keep ladder progress when only the dates change.
       contacts: initial?.contacts ?? {},
     });
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      noValidate
-      className="glass shadow-soft flex flex-col gap-6 rounded-[var(--radius)] p-5 sm:p-7"
+    <section
+      aria-labelledby="setup-heading"
+      className="glass shadow-soft mx-auto flex w-full max-w-2xl flex-col gap-6 rounded-[var(--radius)] p-5 sm:p-8"
     >
-      <fieldset>
-        <legend className="mb-2 font-semibold text-foreground">School</legend>
-        <div className="flex flex-wrap gap-2">
-          <label className={pillClass}>
-            <input type="radio" name="school" value="berkeley" checked readOnly className="size-5 accent-primary" />
-            <span className="font-medium">UC Berkeley</span>
-          </label>
-        </div>
-        <p className="mt-2 text-sm text-muted">Only UC Berkeley is available for now.</p>
-      </fieldset>
-
-      <fieldset>
-        <legend className="mb-2 font-semibold text-foreground">Which process are you tracking?</legend>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          {PROCESSES.map((p) => (
-            <label key={p.id} className={pillClass}>
-              <input
-                type="radio"
-                name="process"
-                value={p.id}
-                checked={process === p.id}
-                onChange={() => setProcess(p.id)}
-                className="size-5 shrink-0 accent-primary"
-              />
-              <span className="font-medium">{p.label}</span>
-            </label>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-muted" aria-live="polite">
+          Step {step} of 3
+        </p>
+        <div aria-hidden className="flex gap-1.5">
+          {[1, 2, 3].map((n) => (
+            <span key={n} className={`h-1.5 w-8 rounded-full ${n <= step ? "bg-primary" : "bg-surface-muted"}`} />
           ))}
         </div>
-      </fieldset>
-
-      <div>
-        <label htmlFor={startId} className="block font-semibold text-foreground">
-          {chosen.dateLabel}
-        </label>
-        <p className="text-sm text-muted">{chosen.hint}</p>
-        <input
-          id={startId}
-          type="date"
-          required
-          max={today}
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          aria-describedby={error ? errorId : undefined}
-          aria-invalid={Boolean(error)}
-          className={inputClass}
-        />
       </div>
 
-      {process === "investigation" && (
-        <div>
-          <label htmlFor={updateId} className="block font-semibold text-foreground">
-            When did you last get a status update? <span className="font-normal text-muted">(optional)</span>
-          </label>
-          <p className="text-sm text-muted">Leave this empty if you haven&apos;t had one yet.</p>
-          <input
-            id={updateId}
-            type="date"
-            min={startDate || undefined}
-            max={today}
-            value={lastUpdateDate}
-            onChange={(e) => setLastUpdateDate(e.target.value)}
-            className={inputClass}
-          />
+      {step === 1 && (
+        <fieldset className="flex flex-col gap-3">
+          <legend id="setup-heading" className="mb-1 font-display text-2xl font-semibold text-foreground">
+            What would you like to keep track of?
+          </legend>
+          <p className="-mt-1 mb-1 text-muted">UC Berkeley (OPHD). More schools are coming later.</p>
+          {PROCESSES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => {
+                setProcess(p.id);
+                setStep(2);
+              }}
+              className={`flex min-h-16 flex-col items-start rounded-2xl border px-5 py-3 text-left transition-colors hover:border-primary hover:bg-primary-soft ${process === p.id && initial ? "border-primary bg-primary-soft" : "border-border bg-surface/80"}`}
+            >
+              <span className="font-semibold text-foreground">{p.label}</span>
+              <span className="text-sm text-muted">{p.description}</span>
+            </button>
+          ))}
+        </fieldset>
+      )}
+
+      {step === 2 && (
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (checkDates()) setStep(3);
+          }}
+          className="flex flex-col gap-6"
+        >
+          <div>
+            <h2 id="setup-heading" className="font-display text-2xl font-semibold text-foreground">
+              <label htmlFor={startId}>{chosen.dateLabel}</label>
+            </h2>
+            <p className="mt-1 text-muted">{chosen.hint}</p>
+            <input
+              id={startId}
+              type="date"
+              max={today}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              aria-invalid={Boolean(error)}
+              className={inputClass}
+            />
+          </div>
+
+          {process === "investigation" && (
+            <div>
+              <label htmlFor={updateId} className="block font-semibold text-foreground">
+                Have you had a status update since? <span className="font-normal text-muted">(optional)</span>
+              </label>
+              <p className="text-sm text-muted">If so, when was the most recent one? Leave empty if not.</p>
+              <input
+                id={updateId}
+                type="date"
+                min={startDate || undefined}
+                max={today}
+                value={lastUpdateDate}
+                onChange={(e) => setLastUpdateDate(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          )}
+
+          {error && (
+            <p role="alert" className="font-medium text-danger">
+              {error}
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-3">
+            <button type="submit" className={primaryBtn}>
+              Continue
+            </button>
+            <button type="button" onClick={() => setStep(1)} className={secondaryBtn}>
+              Back
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === 3 && (
+        <div className="flex flex-col gap-6">
+          <div>
+            <h2 id="setup-heading" className="font-display text-2xl font-semibold text-foreground">
+              Anything else?
+            </h2>
+            <p className="mt-1 text-muted">Tick what applies, or skip this.</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            {process !== "dismissal" && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-surface/80 p-4 has-checked:border-primary has-checked:bg-primary-soft">
+                <input
+                  type="checkbox"
+                  checked={extensionNoticed}
+                  onChange={(e) => setExtensionNoticed(e.target.checked)}
+                  className="mt-1 size-5 shrink-0 accent-primary"
+                />
+                <span>OPHD told me in writing that they&apos;re extending the timeline.</span>
+              </label>
+            )}
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-surface/80 p-4 has-checked:border-primary has-checked:bg-primary-soft">
+              <input
+                type="checkbox"
+                checked={policeReport}
+                onChange={(e) => setPoliceReport(e.target.checked)}
+                className="mt-1 size-5 shrink-0 accent-primary"
+              />
+              <span>I also made a police report.</span>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={finish} className={primaryBtn}>
+              {initial ? "Save changes" : "Start tracking"}
+            </button>
+            <button type="button" onClick={() => setStep(2)} className={secondaryBtn}>
+              Back
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
-        {process !== "dismissal" && (
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              checked={extensionNoticed}
-              onChange={(e) => setExtensionNoticed(e.target.checked)}
-              className="mt-1 size-5 shrink-0 accent-primary"
-            />
-            <span>OPHD sent me written notice of an extension, with a new timeline.</span>
-          </label>
-        )}
-        <label className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={policeReport}
-            onChange={(e) => setPoliceReport(e.target.checked)}
-            className="mt-1 size-5 shrink-0 accent-primary"
-          />
-          <span>I made a police report. (This adds police contacts to the list of who to contact next.)</span>
-        </label>
-      </div>
-
-      {error && (
-        <p id={errorId} role="alert" className="font-medium text-danger">
-          {error}
-        </p>
-      )}
-
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="submit"
-          className="min-h-12 rounded-full bg-primary px-6 py-2 font-medium text-primary-contrast hover:bg-primary-hover"
-        >
-          Show my timeline
+      {onCancel && (
+        <button type="button" onClick={onCancel} className="self-start text-sm font-medium text-primary underline underline-offset-2">
+          Cancel and go back to my case
         </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="min-h-12 rounded-full border border-border bg-surface/70 px-6 py-2 font-medium text-foreground hover:border-primary"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
-    </form>
+      )}
+    </section>
   );
 }
