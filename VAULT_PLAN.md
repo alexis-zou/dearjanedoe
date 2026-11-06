@@ -1,36 +1,54 @@
-# VAULT_PLAN.md — Agent F brief (core only)
+# VAULT_PLAN.md — Vault and filing help
 
-> For a coding agent. Base: `main` @ `66948cf`. Tight timeline: ship the core below, working,
-> before anything else. Read `AGENTS.md` (Next.js here differs from your training data — check
-> `node_modules/next/dist/docs/`), `CONTRACTS.md`, and **`CASE_CLOCK_PLAN.md`** (Agent E) first.
+> **Owner:** one person, working through the phases below in order. **Case Clock** is owned by
+> someone else: see `CASE_CLOCK_PLAN.md`. Read `AGENTS.md` (Next.js here differs from your training
+> data, so check `node_modules/next/dist/docs/`) and `CONTRACTS.md` first. Tight timeline: ship this
+> core, working, before anything else.
 
 ## What to build
 
-1. **Secret management (Phase A — must work first):** a browser-only vault for her details,
-   encrypted if saved; a guard that keeps those details out of anything sent to our server or the
-   AI; and server hygiene for the API key and logs.
-2. **Form filling (Phase B — only after Phase A works):** drafts and forms that fill in her
-   details from the vault, after she approves, for her to copy and paste herself.
+1. **Vault:** browser-only storage for the user's details, encrypted if saved, plus a guard that
+   keeps those details out of anything sent to our server or the AI. Filing help needs this first.
+2. **Filing help:** drafts and form fields that fill in the user's details from the vault after they
+   approve, for them to copy and paste themselves.
 
-Idea (from judge feedback on Instinct's Vault): the AI never sees the secret. It writes
-`{{vault.studentId}}`; her browser fills in the real value.
-
-**Works with Case Clock:** Case Clock's email templates use `{{vault.*}}` tokens and render through
-your `FilledDraft`. Case Clock saves its state through your store, so one passphrase, one lock and
-one delete cover both.
+The idea: the AI never sees the secret. It writes `{{vault.studentId}}`; the browser fills in the
+real value.
 
 ## Rules (must follow)
 
-1. Vault values never leave the browser — not to `/api/*`, not to logs.
+1. Vault values never leave the browser: not to `/api/*`, not to logs.
 2. Vault fields are only: `legalName`, `preferredName`, `studentId`, `schoolEmail`, `phone`,
    `caseNumber`, `investigatorName`. Nothing about what happened, the other person, health, DOB,
    SSN, or money. Form fields like "what happened" show "Only you should write this."
-3. Default is **session-only** (memory only, gone when the tab closes or Quick Exit). Saving is
-   opt-in with a passphrase. No passphrase recovery — say so at setup.
-4. She approves before values are filled ("This will fill in: Name, Case number").
+3. Default is **session-only**: memory only, gone when the tab closes or on Quick Exit. Saving is
+   opt-in with a passphrase. No passphrase recovery; say so at setup.
+4. The user approves before values are filled ("This will fill in: Name, Case number").
 5. Never auto-submit, never drive a browser. Copy-and-paste only.
-6. Don't invent form labels or URLs. No new dependencies. Don't edit other agents' files except
-   the touch points below.
+6. Don't invent form labels or URLs. No new dependencies. Don't edit files outside the lists below.
+   UI copy addresses the user as "you".
+
+## Case Clock depends on you
+
+Nothing here waits on Case Clock. **Case Clock needs two things from you, so tell its owner when each
+is merged to `main`:** the store (Phase 1) and `FilledDraft` (Phase 3).
+
+### Shared interface (identical in both plans; change it only by agreement)
+
+```ts
+// lib/vault/store.ts
+// Session mode or locked: kept in memory only. Saved and unlocked: encrypted with the vault.
+// getRecord returns null when there is no record or the vault is locked.
+export function getRecord(name: "caseclock"): Promise<unknown | null>;
+export function putRecord(name: "caseclock", data: unknown): Promise<void>;
+
+// components/vault/FilledDraft.tsx (default export)
+// Shows tokens as chips -> "Fill in my details" -> approval list -> filled text -> Copy / Open in email.
+type FilledDraftProps = { template: string; subject?: string };
+
+// Tokens: {{vault.legalName}} {{vault.preferredName}} {{vault.studentId}} {{vault.schoolEmail}}
+//         {{vault.phone}} {{vault.caseNumber}} {{vault.investigatorName}}
+```
 
 ## Files you own
 
@@ -42,57 +60,101 @@ lib/vault/vault.test.ts
 data/forms/berkeley.ts
 ```
 
-Touch points (small diffs):
-- `app/layout.tsx`: wrap children in `<VaultProvider>`, add `{ href: "/vault", label: "My details" }` to `NAV` (one combined commit with Agent E's nav entry).
-- `components/ChatWindow.tsx` (Agent C): run outgoing text through `redactOutgoing()` before `chat()`.
-- `app/api/chat/route.ts` (Agent A): log `err?.name`/`err?.status` only, not the full error; add `Cache-Control: no-store`.
-- `CONTRACTS.md`: add a row for Agent F.
+### Shared files (small diffs; pull first)
 
-## Phase A — secret management
+| File | Your change | When |
+|---|---|---|
+| `package.json` | scripts: `"test": "node --test --experimental-strip-types"` | Phase 1 (the Case Clock owner makes the identical change) |
+| `tsconfig.json` | compilerOptions: `"allowImportingTsExtensions": true` | Phase 1 (identical change) |
+| `lib/api.ts` | `chat()` redacts every message before `fetch` | Phase 2 |
+| `components/MessageList.tsx` | show the notice; fill tokens in replies for display only | Phase 2 |
+| `lib/prompts/system.md` | add the placeholder instruction | Phase 2 |
+| `app/api/chat/route.ts` | log `err?.name`/`err?.status` only; add `Cache-Control: no-store` | Phase 2 |
+| `app/layout.tsx` | wrap children in `<VaultProvider>`; add `{ href: "/vault", label: "My details" }` to `NAV` | Phase 3 |
+| `app/page.tsx` | add a `/vault` card to `QUICK_LINKS` (nav links are hidden on phones); change the "Nothing is saved" chip to "Nothing saved unless you choose" | Phase 3 |
+| `CONTRACTS.md` | add a Vault row to File ownership; note that `chat()` redacts | Phase 5 |
 
-- **`crypto.ts`**: WebCrypto only. PBKDF2-SHA-256 (600,000 iterations, random 16-byte salt) →
+## How to work
+
+Work on a branch named `vault`. At the end of each phase: pull `main`, merge it in, run `npm test`
+and `npm run build`, merge to `main`, and push. Tests use `node:test`, relative imports ending in
+`.ts` (Node can't resolve `@/`), and TypeScript syntax Node can strip (no `enum`). WebCrypto is
+available under Node, but `localStorage` isn't, so mock it in tests.
+
+---
+
+## Phase 1 — Vault storage (no dependencies)
+
+- [ ] Add the `test` script and the `tsconfig.json` option from the shared files table.
+- [ ] `crypto.ts`: WebCrypto only. PBKDF2-SHA-256 (600,000 iterations, random 16-byte salt) →
   AES-GCM 256, new random 12-byte IV per save. Store `{salt, iv, ct}` in `localStorage` key
-  `app.cache.v1`. Key is non-extractable and kept in memory only.
-- **`store.ts`**: `mode: "session" | "saved"`, `unlock(passphrase)`, `lock()`, `deleteAll()`,
-  `get/set(key)`, plus `getRecord/putRecord("caseclock", data)` for Case Clock (encrypted with
-  the vault in saved mode; `sessionStorage` in session mode). Wrap storage calls in try/catch.
-- **`egress.ts`**: `redactOutgoing(text, values)` replaces any saved value (also digits-only
-  versions of phone/ID) with its `{{vault.key}}` token. Show "We kept your details on this device
-  and sent placeholders instead."
-- **Server**: the error-log and no-store fixes above; confirm the API key is server-only
-  (`next build`, then search `.next/static` for `sk-ant` → none).
+  `app.cache.v1`. The key is non-extractable and kept in memory only.
+- [ ] `store.ts`: module-level state, `mode: "session" | "saved"`, `unlock(passphrase)`, `lock()`,
+  `deleteAll()`, `get/set(key)`, plus `getRecord/putRecord` from the shared interface. Session mode
+  uses memory only, with no `sessionStorage`. Wrap storage calls in try/catch.
+- [ ] Tests: encrypt/decrypt round trip; wrong passphrase fails; two saves give different IVs; session
+  mode writes nothing to storage, including `caseclock` records.
 
-**Gate:** tests below pass + manual check in DevTools (Network tab shows tokens, not values;
-session mode leaves nothing in storage). Report results before starting Phase B.
+**Done when:** tests and build pass. **Tell the Case Clock owner the store is merged.**
 
-## Phase B — form filling
+## Phase 2 — Keep details out of chat
 
-- **`placeholders.ts`**: `listKeys(template)`, `fill(template, values)` → `{ text, missing }`.
-  Missing values show "Add your student ID".
-- **`FilledDraft.tsx`**: shows the draft with tokens as chips → "Fill in my details" → approval
-  list → filled text → Copy / Open in email. Case Clock's DraftPanel uses this.
-- **`FormAssist.tsx` + `data/forms/berkeley.ts`**: one form ("Report to OPHD") as a list of fields,
-  each mapped to a vault key, a Case Clock date, or "Only you should write this", with a Copy
-  button. Banner: "Field names may not match the live form exactly." No official URL until a human
-  adds it.
-- **`/vault` page**: choose session/saved, edit fields, lock, delete.
+- [ ] `placeholders.ts`: `listKeys(template)`, `fill(template, values)` → `{ text, missing }`.
+- [ ] `egress.ts`: `redactOutgoing(text, values)` replaces any saved value (also digits-only versions
+  of phone/ID) with its `{{vault.key}}` token. Match on word boundaries and replace the longest values
+  first, so "Sam" doesn't change "Samantha" or "same". Skip empty values.
+- [ ] `lib/api.ts`: `chat()` redacts every message, so **both** chat windows are covered:
+  `ChatWindow` and the school chat in `SchoolPicker`. Resent history is redacted too.
+- [ ] `lib/prompts/system.md`: tell the AI that `{{vault.key}}` is a private placeholder to repeat
+  exactly when needed, and never to ask for its real value.
+- [ ] `MessageList`: both chats use it. Where a user message contains a vault value, show "We kept
+  your details on this device and sent placeholders instead." Fill tokens in replies for display
+  only. If a value is missing or locked, show a readable phrase such as "your student ID", never the
+  raw token.
+- [ ] `route.ts`: the error-log and no-store changes.
+- [ ] Tests: mock `fetch`; messages containing saved values, sent with and without a `school` → the
+  request body has tokens, not values. `fill()` fills known keys and reports missing ones.
+- [ ] Run `next build`, then search `.next/static` for `sk-ant`. Expect no matches.
 
-## Tests (`node:test`)
+**Done when:** tests pass, and in DevTools, both chats show tokens rather than values in the Network
+tab, and session mode leaves no vault or Case Clock data in browser storage. The disclaimer's own
+`sessionStorage` flag is expected. Report these results before starting Phase 3.
 
-- Encrypt/decrypt round trip; wrong passphrase fails; two saves give different IVs.
-- Session mode writes nothing vault-related to storage.
-- Mock `fetch`: chat messages containing saved values → request body has tokens, not values.
-- `fill()` fills known keys, reports missing ones.
+## Phase 3 — My details page and draft filling
 
-## Demo seed (`?demo=1`, shared with Case Clock)
+- [ ] `VaultProvider`, plus the `app/layout.tsx` and `app/page.tsx` changes.
+- [ ] `/vault` page: choose session/saved, edit fields, lock, delete. State at setup that there's no
+  passphrase recovery.
+- [ ] `FilledDraft.tsx`, matching the shared interface. Missing values show "Add your student ID".
 
-Session vault with fake values: Jane Doe, student ID 3031234567, case OPHD-2026-0000. Flow:
-Case Clock draft → approve → filled → copy · type the student ID in chat → Network tab shows
-`{{vault.studentId}}` · Form Assist fills name/ID · Quick Exit → reopen → vault empty.
+**Done when:** a sample template goes through chips → approval → filled text → copy, and Quick Exit
+then reopening leaves a session vault empty. **Tell the Case Clock owner `FilledDraft` is merged.**
 
-## Done when
+## Phase 4 — Filing help
 
-Phase A gate passed first, then Phase B works in the demo flow; `npm run build` and tests pass.
+**Needs a person:** real field names from OPHD's live report form. Without them, list each detail
+under its own vault name (for example "Student ID") and don't present the list as the form's fields.
+
+- [ ] `data/forms/berkeley.ts`: one form ("Report to OPHD") as a list of fields, each mapped to a
+  vault key or to "Only you should write this". No mapping to Case Clock data. No official URL until a
+  person adds one.
+- [ ] `FormAssist.tsx`, on the `/vault` page: a Copy button per field, the approval step from Rule 4,
+  and the banner "Field names may not match the live form exactly."
+
+**Done when:** after approval, each mapped field copies its value, and "what happened"-type fields
+offer no fill or copy.
+
+## Phase 5 — Demo, finish
+
+- [ ] Demo seed: `VaultProvider` handles `?demo=1` with a session vault of fake values: Jane Doe,
+  student ID 3031234567, case OPHD-2026-0000. Never overwrite saved data. Case Clock seeds its own
+  dates.
+- [ ] Add the `CONTRACTS.md` row.
+- [ ] With the Case Clock owner, once both are merged, run the full demo: Case Clock draft → approve →
+  filled → copy · type the student ID in chat → Network tab shows `{{vault.studentId}}` · filing help
+  fills name/ID · Quick Exit → reopen → vault empty.
+
+**Done when:** `npm run build` and `npm test` pass, and the full demo works.
 
 **Later, not now:** idle auto-lock timer, server-side regex scrub, Stanford/Cornell forms,
 export/import, masked display.
