@@ -38,25 +38,29 @@ export function statusRequest(ctx: TemplateContext): EmailTemplate {
       "",
       `I'm writing to ask for a status update on my case. ${r.cite} says the Title IX Officer will "${r.quote}."`,
       "",
-      `My last update was on ${formatDate(since)}. Could you share where the investigation stands and what the next steps are?`,
+      `${ctx.lastUpdateDate ? `My last update was on ${formatDate(since)}` : `I haven't had a status update since the investigation started on ${formatDate(since)}`}. Could you share where the investigation stands and what the next steps are?`,
       "",
       SIGN_OFF,
     ].join("\n"),
   };
 }
 
-export function timelineRequest(ctx: TemplateContext): EmailTemplate {
-  const r = rule(ctx, "invest");
+export function timelineRequest(
+  ctx: TemplateContext,
+  ruleId: "invest" | "altres" = "invest",
+): EmailTemplate {
+  const r = rule(ctx, ruleId);
+  const noun = ruleId === "altres" ? "the Alternative Resolution process" : "the investigation";
   return {
     id: "timeline-request",
     title: "Ask about the timeline",
-    subject: "Question about the investigation timeline — Case: {{vault.caseNumber}}",
+    subject: "Question about my case timeline — Case: {{vault.caseNumber}}",
     body: [
       "Dear {{vault.investigatorName}},",
       "",
-      `I'm writing about the timeline for my case. ${r.cite} says the investigation is completed "${r.quote}," and that if it's extended, the parties are told in writing the reason and the projected new timeline.`,
+      `I'm writing about the timeline for my case. ${r.cite} says ${noun} is completed "${r.quote}," and that if it's extended, the parties are told in writing the reason and the projected new timeline.`,
       "",
-      `I received written notice of the charges on ${formatDate(ctx.startDate)}, which is ${ctx.elapsed} business days ago. I haven't received a notice of extension.`,
+      `I received ${r.startsFrom} on ${formatDate(ctx.startDate)}, which is ${ctx.elapsed} business days ago. I haven't received a notice of extension.`,
       "",
       "Could you tell me the reason for the delay and the projected new timeline in writing?",
       "",
