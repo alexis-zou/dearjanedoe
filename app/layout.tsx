@@ -7,6 +7,7 @@ import "./globals.css";
 import QuickExitButton from "@/components/QuickExitButton";
 import GetHelpNowButton from "@/components/GetHelpNowButton";
 import Disclaimer from "@/components/Disclaimer";
+import VaultProvider from "@/components/vault/VaultProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ const NAV = [
   { href: "/crisis", label: "Crisis Support" },
   { href: "/legal", label: "Legal Help" },
   { href: "/university", label: "University" },
+  { href: "/vault", label: "My details" },
 ];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -86,7 +88,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
 
         <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">
-          {children}
+          <VaultProvider>{children}</VaultProvider>
         </main>
 
         <footer className="mt-4">

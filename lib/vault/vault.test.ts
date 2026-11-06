@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, test } from "node:test";
+import { reportToOphd } from "../../data/forms/berkeley.ts";
 import { chat } from "../api.ts";
 import type { ChatRequest, Message, School } from "../types.ts";
 import { decrypt, deriveKey, encrypt, newSalt, STORAGE_KEY } from "./crypto.ts";
 import type { Envelope } from "./crypto.ts";
 import { containsVaultValue, redactOutgoing } from "./egress.ts";
-import { fill, fillForDisplay, listKeys } from "./placeholders.ts";
+import { fill, fillForDisplay, listKeys, splitTokens } from "./placeholders.ts";
 import * as store from "./store.ts";
 
 // ---- localStorage doesn't exist under Node, so mock it and record every write ----
@@ -199,6 +200,15 @@ describe("placeholders", () => {
     assert.equal(fill("{{vault.legalName}}", { legalName: "J$&ne" }).text, "J$&ne");
   });
 
+  test("splitTokens separates text and fields", () => {
+    assert.deepEqual(splitTokens("Hi {{vault.legalName}}, {{vault.phone}}"), [
+      "Hi ",
+      { key: "legalName" },
+      ", ",
+      { key: "phone" },
+    ]);
+  });
+
   test("fillForDisplay never shows a raw token", () => {
     assert.equal(
       fillForDisplay("{{vault.studentId}} {{vault.legalName}} {{vault.ssn}}", { legalName: "Jane" }),
@@ -319,6 +329,19 @@ describe("chat", () => {
     const message: Message = { role: "user", content: "My ID is 3031234567" };
     await send([message]);
     assert.equal(message.content, "My ID is 3031234567");
+  });
+});
+
+describe("filing help data", () => {
+  test("what-happened fields can't be filled from the vault", () => {
+    const onlyYou = reportToOphd.fields.filter((field) => "onlyYou" in field);
+    assert.ok(onlyYou.some((field) => field.label === "What happened"));
+    assert.ok(onlyYou.every((field) => !("vaultKey" in field)));
+  });
+
+  test("has no official link or claim to match the live form until a person checks", () => {
+    assert.equal(reportToOphd.url, undefined);
+    assert.equal(reportToOphd.labelsMatchLiveForm, false);
   });
 });
 

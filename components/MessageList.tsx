@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import type { Message } from "@/lib/types";
 import { containsVaultValue } from "@/lib/vault/egress";
 import { fillForDisplay } from "@/lib/vault/placeholders";
-import { getAll, getVersion, subscribe } from "@/lib/vault/store";
+import { useVault } from "./vault/VaultProvider";
 
 type MessageListProps = {
   messages: Message[];
@@ -20,9 +20,7 @@ function renderBold(content: string) {
 
 export default function MessageList({ messages, isLoading }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Re-render when vault values change, so filled-in text stays current.
-  useSyncExternalStore(subscribe, getVersion, () => 0);
-  const vaultValues = getAll();
+  const { values: vaultValues } = useVault();
 
   // Scroll only this panel, so the rest of the page stays where the reader left it.
   useEffect(() => {

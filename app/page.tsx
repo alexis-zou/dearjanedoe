@@ -29,6 +29,13 @@ const QUICK_LINKS = [
       <path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V15c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" />
     ),
   },
+  {
+    href: "/vault",
+    title: "My details",
+    body: "Keep your details on this device and fill them into drafts and forms.",
+    accent: "from-[#8db7f0] to-[#b49cf0]",
+    icon: <path d="M6 11h12v9H6zM9 11V7a3 3 0 0 1 6 0v4" />,
+  },
 ];
 
 export default function Home() {
@@ -58,7 +65,7 @@ export default function Home() {
 
         {/* Reassurance chips */}
         <ul className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-muted">
-          {["No account needed", "Nothing is saved", "Leave anytime"].map((t) => (
+          {["No account needed", "Nothing saved unless you choose","Leave anytime"].map((t) => (
             <li
               key={t}
               className="rounded-full border border-border bg-surface/60 px-3 py-1"

@@ -23,6 +23,9 @@ Response:
 ```
 
 - Client calls `chat(messages, school?)` from `lib/api.ts` → returns `reply` string.
+- `chat()` replaces saved vault values with `{{vault.key}}` tokens in every message before
+  sending, including resent history. Replies may contain tokens; `MessageList` fills them for
+  display only.
 - Non-streaming. Node runtime. Model `claude-sonnet-5`.
 - Key: `process.env.ANTHROPIC_API_KEY`, server-only (never `NEXT_PUBLIC_`).
 
@@ -49,6 +52,7 @@ Use these utility colors: `bg-background`, `bg-surface`, `bg-surface-muted`,
 | **B — Crisis + safety** | `app/crisis/page.tsx`, `data/hotlines.ts`, `components/{ResourceCard,QuickExitButton,GetHelpNowButton,CrisisSheet,Disclaimer}.tsx` |
 | **C — Legal chat** | `app/legal/page.tsx`, `components/{ChatWindow,MessageList,Composer,LegalAidCard}.tsx`, `data/{legalAid,consultationPrompts}.ts` |
 | **D — University + home** | `app/university/page.tsx`, `components/{SchoolPicker,PolicyView}.tsx`, `app/page.tsx` |
+| **Vault** | `app/vault/page.tsx`, `components/vault/{VaultProvider,FilledDraft,FormAssist}.tsx`, `lib/vault/{types,crypto,store,placeholders,egress}.ts`, `lib/vault/vault.test.ts`, `data/forms/berkeley.ts` |
 
 `app/layout.tsx` (scaffold) imports B's `QuickExitButton`, `GetHelpNowButton`, `Disclaimer`.
 Page rendering compiles once Agent B provides those three files.

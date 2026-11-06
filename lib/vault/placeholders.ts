@@ -18,6 +18,20 @@ export function listKeys(template: string): VaultKey[] {
   return [...keys];
 }
 
+/** Splits a template into plain text and vault fields, for showing tokens as chips. */
+export function splitTokens(template: string): (string | { key: VaultKey })[] {
+  const parts: (string | { key: VaultKey })[] = [];
+  let position = 0;
+  for (const match of template.matchAll(tokenPattern())) {
+    if (!isVaultKey(match[1])) continue;
+    if (match.index > position) parts.push(template.slice(position, match.index));
+    parts.push({ key: match[1] });
+    position = match.index + match[0].length;
+  }
+  if (position < template.length) parts.push(template.slice(position));
+  return parts;
+}
+
 /** Fills known tokens from `values`. Tokens with no value stay as tokens and are reported. */
 export function fill(
   template: string,
