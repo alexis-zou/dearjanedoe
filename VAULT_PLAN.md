@@ -85,36 +85,36 @@ available under Node, but `localStorage` isn't, so mock it in tests.
 
 ## Phase 1 — Vault storage (no dependencies)
 
-- [ ] Add the `test` script and the `tsconfig.json` option from the shared files table.
-- [ ] `crypto.ts`: WebCrypto only. PBKDF2-SHA-256 (600,000 iterations, random 16-byte salt) →
+- [x] Add the `test` script and the `tsconfig.json` option from the shared files table.
+- [x] `crypto.ts`: WebCrypto only. PBKDF2-SHA-256 (600,000 iterations, random 16-byte salt) →
   AES-GCM 256, new random 12-byte IV per save. Store `{salt, iv, ct}` in `localStorage` key
   `app.cache.v1`. The key is non-extractable and kept in memory only.
-- [ ] `store.ts`: module-level state, `mode: "session" | "saved"`, `unlock(passphrase)`, `lock()`,
+- [x] `store.ts`: module-level state, `mode: "session" | "saved"`, `unlock(passphrase)`, `lock()`,
   `deleteAll()`, `get/set(key)`, plus `getRecord/putRecord` from the shared interface. Session mode
   uses memory only, with no `sessionStorage`. Wrap storage calls in try/catch.
-- [ ] Tests: encrypt/decrypt round trip; wrong passphrase fails; two saves give different IVs; session
+- [x] Tests: encrypt/decrypt round trip; wrong passphrase fails; two saves give different IVs; session
   mode writes nothing to storage, including `caseclock` records.
 
 **Done when:** tests and build pass. **Tell the Case Clock owner the store is merged.**
 
 ## Phase 2 — Keep details out of chat
 
-- [ ] `placeholders.ts`: `listKeys(template)`, `fill(template, values)` → `{ text, missing }`.
-- [ ] `egress.ts`: `redactOutgoing(text, values)` replaces any saved value (also digits-only versions
+- [x] `placeholders.ts`: `listKeys(template)`, `fill(template, values)` → `{ text, missing }`.
+- [x] `egress.ts`: `redactOutgoing(text, values)` replaces any saved value (also digits-only versions
   of phone/ID) with its `{{vault.key}}` token. Match on word boundaries and replace the longest values
   first, so "Sam" doesn't change "Samantha" or "same". Skip empty values.
-- [ ] `lib/api.ts`: `chat()` redacts every message, so **both** chat windows are covered:
+- [x] `lib/api.ts`: `chat()` redacts every message, so **both** chat windows are covered:
   `ChatWindow` and the school chat in `SchoolPicker`. Resent history is redacted too.
-- [ ] `lib/prompts/system.md`: tell the AI that `{{vault.key}}` is a private placeholder to repeat
+- [x] `lib/prompts/system.md`: tell the AI that `{{vault.key}}` is a private placeholder to repeat
   exactly when needed, and never to ask for its real value.
-- [ ] `MessageList`: both chats use it. Where a user message contains a vault value, show "We kept
+- [x] `MessageList`: both chats use it. Where a user message contains a vault value, show "We kept
   your details on this device and sent placeholders instead." Fill tokens in replies for display
   only. If a value is missing or locked, show a readable phrase such as "your student ID", never the
   raw token.
-- [ ] `route.ts`: the error-log and no-store changes.
-- [ ] Tests: mock `fetch`; messages containing saved values, sent with and without a `school` → the
+- [x] `route.ts`: the error-log and no-store changes.
+- [x] Tests: mock `fetch`; messages containing saved values, sent with and without a `school` → the
   request body has tokens, not values. `fill()` fills known keys and reports missing ones.
-- [ ] Run `next build`, then search `.next/static` for `sk-ant`. Expect no matches.
+- [x] Run `next build`, then search `.next/static` for `sk-ant`. Expect no matches.
 
 **Done when:** tests pass, and in DevTools, both chats show tokens rather than values in the Network
 tab, and session mode leaves no vault or Case Clock data in browser storage. The disclaimer's own
@@ -122,10 +122,10 @@ tab, and session mode leaves no vault or Case Clock data in browser storage. The
 
 ## Phase 3 — My details page and draft filling
 
-- [ ] `VaultProvider`, plus the `app/layout.tsx` and `app/page.tsx` changes.
-- [ ] `/vault` page: choose session/saved, edit fields, lock, delete. State at setup that there's no
+- [x] `VaultProvider`, plus the `app/layout.tsx` and `app/page.tsx` changes.
+- [x] `/vault` page: choose session/saved, edit fields, lock, delete. State at setup that there's no
   passphrase recovery.
-- [ ] `FilledDraft.tsx`, matching the shared interface. Missing values show "Add your student ID".
+- [x] `FilledDraft.tsx`, matching the shared interface. Missing values show "Add your student ID".
 
 **Done when:** a sample template goes through chips → approval → filled text → copy, and Quick Exit
 then reopening leaves a session vault empty. **Tell the Case Clock owner `FilledDraft` is merged.**
@@ -135,10 +135,10 @@ then reopening leaves a session vault empty. **Tell the Case Clock owner `Filled
 **Needs a person:** real field names from OPHD's live report form. Without them, list each detail
 under its own vault name (for example "Student ID") and don't present the list as the form's fields.
 
-- [ ] `data/forms/berkeley.ts`: one form ("Report to OPHD") as a list of fields, each mapped to a
+- [x] `data/forms/berkeley.ts`: one form ("Report to OPHD") as a list of fields, each mapped to a
   vault key or to "Only you should write this". No mapping to Case Clock data. No official URL until a
   person adds one.
-- [ ] `FormAssist.tsx`, on the `/vault` page: a Copy button per field, the approval step from Rule 4,
+- [x] `FormAssist.tsx`, on the `/vault` page: a Copy button per field, the approval step from Rule 4,
   and the banner "Field names may not match the live form exactly."
 
 **Done when:** after approval, each mapped field copies its value, and "what happened"-type fields
@@ -146,10 +146,10 @@ offer no fill or copy.
 
 ## Phase 5 — Demo, finish
 
-- [ ] Demo seed: `VaultProvider` handles `?demo=1` with a session vault of fake values: Jane Doe,
+- [x] Demo seed: `VaultProvider` handles `?demo=1` with a session vault of fake values: Jane Doe,
   student ID 3031234567, case OPHD-2026-0000. Never overwrite saved data. Case Clock seeds its own
   dates.
-- [ ] Add the `CONTRACTS.md` row.
+- [x] Add the `CONTRACTS.md` row.
 - [ ] With the Case Clock owner, once both are merged, run the full demo: Case Clock draft → approve →
   filled → copy · type the student ID in chat → Network tab shows `{{vault.studentId}}` · filing help
   fills name/ID · Quick Exit → reopen → vault empty.

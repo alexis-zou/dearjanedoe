@@ -9,9 +9,9 @@ Three sections: **Crisis Support** (hotlines), **Legal Help** (grounded "Know Yo
 Rights" chatbot + legal-aid directory + consultation prep), **University Navigator**
 (Cornell / Stanford / Berkeley Title IX policy over the federal baseline).
 
-Two more features are planned and not built yet: **Case Clock** (`/tracker`, Berkeley
-timelines and draft emails) and **Vault + filing help** (`/vault`, browser-only personal
-details that fill into drafts and forms for copy and paste). See Progress.
+**My details** (`/vault`) keeps a few personal details in the browser, fills them into drafts
+and forms for copy and paste after you approve, and keeps them out of chat requests. **Case
+Clock** (`/tracker`) shows Berkeley timelines next to your dates and offers draft emails.
 
 ## Stack
 Next.js (App Router, TS) · Tailwind v4 · `@anthropic-ai/sdk` · model `claude-sonnet-5`
@@ -22,15 +22,17 @@ Next.js (App Router, TS) · Tailwind v4 · `@anthropic-ai/sdk` · model `claude-
 npm install
 # create .env.local with:  ANTHROPIC_API_KEY=sk-ant-...
 npm run dev            # http://localhost:3000
+npm test               # unit tests (node:test)
 ```
+Add `?demo=1` to a URL to fill a session vault with fake details. It never touches a saved vault.
 
 ## Layout
 ```
 app/            layout + pages + api/chat/route.ts (AI core)
-components/      UI (safety buttons, chat, cards, school picker)
-lib/             types.ts, api.ts, crisis.ts, prompts/system.md
+components/      UI (safety buttons, chat, cards, school picker, vault/)
+lib/             types.ts, api.ts, crisis.ts, prompts/system.md, vault/
 content/corpus/  title-ix-federal.md + cornell/stanford/berkeley.md (grounding)
-data/            hotlines, legal aid, consultation prompts
+data/            hotlines, legal aid, consultation prompts, forms/
 design/          UI design reference images
 CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
 CASE_CLOCK_PLAN.md  ·  VAULT_PLAN.md  phased plans for the two features in progress
@@ -41,6 +43,11 @@ CASE_CLOCK_PLAN.md  ·  VAULT_PLAN.md  phased plans for the two features in prog
 - Crisis-signal messages escalate to 988 / Crisis Text Line / RAINN before anything else.
 - School answers limited to the 3 curated schools; the bot never invents policy.
 - Ephemeral chat; not a reporting channel.
+- Saved vault values never go to `/api/*` or logs: `chat()` swaps exact matches for
+  `{{vault.key}}` tokens. It can't catch partial names, typos, or anything typed while the vault
+  is locked.
+- The vault is session-only by default. Saving is opt-in, encrypted, and has no passphrase recovery.
+- Nothing is auto-submitted. People copy and paste drafts and form details themselves.
 
 ## Progress
 - [x] **Phase 0 — scaffold:** Next.js + Tailwind, calming theme tokens, nav/layout
@@ -63,10 +70,13 @@ CASE_CLOCK_PLAN.md  ·  VAULT_PLAN.md  phased plans for the two features in prog
       summaries, and school Q&A chat (Cornell / Stanford / Berkeley). Includes the
       gradient-mesh + glass UI redesign.
 - [x] **Corpus update:** Cornell and Berkeley grounded in official sources (see the note below).
-- [ ] **Case Clock:** not started. One owner, five phases: `CASE_CLOCK_PLAN.md`. Its Berkeley
-      citations must be checked against the UC policy PDF before release.
-- [ ] **Vault + filing help:** not started. One owner, five phases: `VAULT_PLAN.md`. Case Clock
-      needs its store (Phase 1) and `FilledDraft` (Phase 3) for its own Phase 4.
+- [x] **Case Clock:** on `main`, using the vault's store and `FilledDraft`. Status and what's
+      verified: `CASE_CLOCK_PLAN.md`.
+- [ ] **Vault + filing help:** Phases 1–4 and the Phase 5 demo seed are on `main`:
+      `VAULT_PLAN.md`. Unit tests and a headless Chrome run pass. **Still open:** a person running
+      the full demo, a live check that the model repeats `{{vault.key}}` exactly (needs a working
+      `ANTHROPIC_API_KEY`), and checking OPHD's real field names and link. Until a person does
+      that, filing help lists details under the vault's own names.
 - [ ] Phase 2 — integration, a11y pass, verify hotlines/links, demo
 
 > Corpus note: Stanford is grounded in the official policy PDF (1.7.1, 2023-04-13), the SHARE
