@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import CaseClock from "@/components/caseclock/CaseClock";
 
 export const metadata: Metadata = {
-  title: "Case Clock — Know Your Rights",
+  title: "Case Clock — Dear Jane Doe",
   description:
     "See your school's published Title IX timeline next to your own dates, and draft a polite email when things run long. General information, not legal advice.",
 };

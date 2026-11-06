@@ -26,7 +26,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Know Your Rights — Survivor Support",
+  title: "Dear Jane Doe — Survivor Support",
   description:
     "Trauma-informed general information about your rights, resources, and university Title IX processes. Not legal advice.",
 };
@@ -62,7 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               href="/"
               className="font-display text-xl font-semibold text-foreground"
             >
-              Know Your Rights
+              Dear Jane Doe
             </Link>
 
             <ul className="hidden items-center gap-x-5 text-[0.95rem] sm:flex">
