@@ -1,18 +1,23 @@
 "use client";
 
-import Link from "next/link";
-
-// PLACEHOLDER (Phase 0) — Agent B OWNS this file and will replace it with the real
-// "Get Help Now" control that opens the CrisisSheet modal (988 / 741741 / RAINN).
-// For now it routes to the Crisis page so the scaffold compiles and the escape path works.
+import { useState } from "react";
+import CrisisSheet from "@/components/CrisisSheet";
 
 export default function GetHelpNowButton() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Link
-      href="/crisis"
-      className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-contrast hover:bg-primary-hover"
-    >
-      Get Help Now
-    </Link>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="inline-flex min-h-11 items-center rounded-full bg-danger px-4 py-2 font-semibold text-danger-contrast hover:bg-danger-hover"
+      >
+        Get help now
+      </button>
+      <CrisisSheet open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }

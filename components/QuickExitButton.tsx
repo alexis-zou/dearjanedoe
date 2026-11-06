@@ -1,28 +1,29 @@
 "use client";
 
-// PLACEHOLDER (Phase 0) — Agent B OWNS this file and will replace it.
-// Kept functional because it is safety-critical and trivial: leaves the site via
-// location.replace (not in Back history) to protect a user whose screen may be watched.
+/** Neutral site the user is sent to. `replace` keeps this app out of Back history. */
+const EXIT_URL = "https://weather.com";
+
+export function quickExit() {
+  try {
+    // Chat state is in-memory and dies with the page; also wipe any session
+    // flags (e.g. disclaimer-seen) so nothing about this visit lingers.
+    sessionStorage.clear();
+  } catch {
+    // Storage can throw in private modes — never block the exit on it.
+  }
+  window.location.replace(EXIT_URL);
+}
 
 export default function QuickExitButton() {
-  function exit() {
-    try {
-      // Clear anything an agent may have stashed for the ephemeral session.
-      sessionStorage.clear();
-    } catch {
-      /* ignore */
-    }
-    window.location.replace("https://weather.com");
-  }
-
   return (
     <button
       type="button"
-      onClick={exit}
-      aria-label="Quick exit — leave this site immediately"
-      className="rounded-lg bg-danger px-3 py-2 text-sm font-semibold text-danger-contrast hover:bg-danger-hover"
+      onClick={quickExit}
+      aria-label="Quick exit: leave this site immediately"
+      title="Leave this site immediately"
+      className="inline-flex min-h-11 items-center rounded-full bg-foreground px-4 py-2 font-semibold text-background hover:opacity-90"
     >
-      Quick Exit
+      Quick exit
     </button>
   );
 }

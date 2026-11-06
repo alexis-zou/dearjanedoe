@@ -44,9 +44,11 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
       corpus + crisis defense-in-depth), `.env.example`. Route verified: validation +
       error paths pass; **live LLM round-trip pending a real `ANTHROPIC_API_KEY`** in
       `.env.local`.
-- [ ] Agent B — Crisis section + safety buttons + disclaimer
-      *(minimal placeholder stubs exist so the app compiles/runs: functional QuickExit,
-      GetHelpNow→/crisis, no-op Disclaimer — Agent B replaces these)*
+- [x] **Agent B — Crisis + safety:** `/crisis` page (12 lines, text vs call, one-tap
+      `tel:`/`sms:`), Get Help Now modal (RAINN / 988 / Crisis Text Line), Quick Exit,
+      first-visit Disclaimer (sessionStorage, not localStorage). Numbers verified against
+      official sites 2026-11-06 (Trans Lifeline is **not** 24/7 — weekday hours shown).
+      E2E (Playwright) passes: nav → /crisis, Get Help Now → sheet → /crisis, mobile.
 - [x] **Agent C — Legal chat + legal-aid + consultation prep:** chat UI, directory, and
       question checklist. Tested in a browser against a mock route; **live replies pending
       a real `ANTHROPIC_API_KEY`**.
