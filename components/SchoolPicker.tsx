@@ -98,7 +98,7 @@ function SchoolQA({ school, schoolName }: { school: School; schoolName: string }
             <p className="font-medium">
               We couldn&apos;t get a reply right now. Your question wasn&apos;t answered.
             </p>
-            <p className="mt-1 text-sm">The summary above is still here for you to read.</p>
+            <p className="mt-1 text-sm">The summary below is still here for you to read.</p>
             <button
               type="button"
               onClick={() => void requestReply(messages)}
@@ -167,6 +167,9 @@ export default function SchoolPicker({ panels }: { panels: Record<School, ReactN
         </p>
       )}
 
+      {/* key remounts the Q&A, clearing the conversation whenever the school changes. */}
+      {school && <SchoolQA key={school} school={school} schoolName={schoolName} />}
+
       {/* All panels are server-rendered; only the selected one is shown. */}
       {SCHOOLS.map((s) => (
         <div key={s.id} hidden={school !== s.id}>
@@ -174,8 +177,6 @@ export default function SchoolPicker({ panels }: { panels: Record<School, ReactN
         </div>
       ))}
 
-      {/* key remounts the Q&A, clearing the conversation whenever the school changes. */}
-      {school && <SchoolQA key={school} school={school} schoolName={schoolName} />}
     </div>
   );
 }
