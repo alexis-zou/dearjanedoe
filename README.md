@@ -1,4 +1,4 @@
-# Know Your Rights — Survivor Support App
+# Dear Jane Doe — Survivor Support App
 
 Trauma-informed web app helping survivors of sexual assault understand their rights,
 find resources, and navigate university Title IX/VI processes. **General information,

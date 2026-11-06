@@ -7,7 +7,7 @@ import SchoolPicker from "@/components/SchoolPicker";
 import { SCHOOLS, type School } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "University Navigator — Know Your Rights",
+  title: "University Navigator — Dear Jane Doe",
   description:
     "Plain-language summaries of Title IX options at Cornell, Stanford, and UC Berkeley, plus the federal baseline. General information, not legal advice.",
 };

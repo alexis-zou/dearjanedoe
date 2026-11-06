@@ -3,7 +3,7 @@ import ResourceCard from "@/components/ResourceCard";
 import { callLines, textLines } from "@/data/hotlines";
 
 export const metadata: Metadata = {
-  title: "Crisis Support — Know Your Rights",
+  title: "Crisis Support — Dear Jane Doe",
 };
 
 // Note: the root layout already provides <main id="main"> and page padding.
