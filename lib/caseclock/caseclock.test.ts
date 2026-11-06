@@ -142,3 +142,51 @@ test("ladder: a reply stops the suggestion", () => {
   assert.equal(rungState(contacts.s1, day(20)).state, "replied");
   assert.equal(suggestNext(RUNGS, "school", contacts, day(20)), null);
 });
+
+// ---------- Berkeley data + templates ----------
+
+import { berkeleyTimeline } from "../../data/timelines/berkeley.ts";
+import { berkeleyLadder } from "../../data/ladders/berkeley.ts";
+import { followUp, statusRequest, timelineRequest, vaultTokens } from "./templates.ts";
+
+const VAULT_KEYS = [
+  "legalName", "preferredName", "studentId", "schoolEmail", "phone", "caseNumber", "investigatorName",
+];
+
+test("Berkeley rules match the policy numbers", () => {
+  const by = Object.fromEntries(berkeleyTimeline.rules.map((r) => [r.id, r]));
+  assert.equal(by.invest.minDays, 60);
+  assert.equal(by.invest.maxDays, 90);
+  assert.equal(
+    by.invest.quote,
+    "typically within 60 to 90 business days of notifying the parties in writing of the charges",
+  );
+  assert.equal(by.status.everyDays, 30);
+  assert.equal(by.altres.minDays, 30);
+  assert.equal(by.altres.maxDays, 60);
+  assert.equal(by["dismissal-appeal"].deadlineDays, 5);
+});
+
+test("ladder contacts stay empty until confirmed", () => {
+  for (const rung of berkeleyLadder) assert.equal(rung.contact, undefined);
+});
+
+test("templates use only vault tokens for personal details", () => {
+  const ctx = {
+    timeline: berkeleyTimeline,
+    startDate: "2026-06-01",
+    elapsed: 94,
+    lastUpdateDate: "2026-09-21",
+    office: "UCPD detective on your report",
+    contactedOn: "2026-10-21",
+  };
+  for (const t of [statusRequest(ctx), timelineRequest(ctx), followUp(ctx)]) {
+    const text = `${t.subject}\n${t.body}`;
+    for (const key of vaultTokens(text)) assert.ok(VAULT_KEYS.includes(key), `unknown token ${key}`);
+    assert.ok(text.includes("{{vault.legalName}}"));
+    assert.ok(text.includes("Case: {{vault.caseNumber}}"));
+    // No stray long digit runs (IDs, phone numbers) outside of dates.
+    assert.equal(/\d{6,}/.test(text), false);
+    assert.equal(/\b(violated|you should|you must)\b/i.test(text), false);
+  }
+});
