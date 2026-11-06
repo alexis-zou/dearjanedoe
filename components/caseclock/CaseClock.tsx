@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { berkeleyLadder } from "@/data/ladders/berkeley";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/caseclock/businessDays";
 import { evaluate, type StageResult } from "@/lib/caseclock/engine";
 import { load, save } from "@/lib/caseclock/persistence";
+import { subscribe } from "@/lib/vault/store";
 import { followUp, statusRequest, timelineRequest } from "@/lib/caseclock/templates";
 import type { CaseClockState, EmailTemplate, LadderTrack } from "@/lib/caseclock/types";
 import DraftPanel from "./DraftPanel";
@@ -93,6 +94,10 @@ export default function CaseClock() {
   const [isDemo, setIsDemo] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<EmailTemplate | null>(null);
+  const isDemoRef = useRef(false);
+  useEffect(() => {
+    isDemoRef.current = isDemo;
+  }, [isDemo]);
 
   useEffect(() => {
     let alive = true;
@@ -107,8 +112,15 @@ export default function CaseClock() {
       }
       setLoaded(true);
     });
+    // When the vault unlocks (or is deleted), pick up whatever it now holds.
+    const unsubscribe = subscribe(() => {
+      void load().then((saved) => {
+        if (alive && !isDemoRef.current) setState(saved);
+      });
+    });
     return () => {
       alive = false;
+      unsubscribe();
     };
   }, [demo, today]);
 

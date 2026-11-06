@@ -25,7 +25,7 @@ export default function TrackerPage() {
           passed, and who you can contact if things run long. Go at your own pace.
         </p>
         <ul className="flex flex-wrap gap-2 text-sm text-muted">
-          {["Dates only, no details", "Nothing is sent for you", "Clears when you reload"].map((t) => (
+          {["Dates only, no details", "Nothing is sent for you", "Saved only if you choose"].map((t) => (
             <li key={t} className="rounded-full border border-border bg-surface/60 px-3 py-1">
               {t}
             </li>
