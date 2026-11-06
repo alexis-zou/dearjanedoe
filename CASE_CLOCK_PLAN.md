@@ -84,15 +84,15 @@ ending in `.ts` (Node can't resolve `@/`), and TypeScript syntax Node can strip 
 
 ## Phase 1 — Date logic and tests (no dependencies)
 
-- [ ] Add the `test` script and the `tsconfig.json` option from the shared files table.
-- [ ] `businessDays.ts`: skip weekends + US federal holidays (hardcode 2026–2027 dates).
-- [ ] `engine.ts`: `status(rule, startDate, today, extensionNoticed)` →
+- [x] Add the `test` script and the `tsconfig.json` option from the shared files table.
+- [x] `businessDays.ts`: skip weekends + US federal holidays (hardcode 2026–2027 dates).
+- [x] `engine.ts`: `status(rule, startDate, today, extensionNoticed)` →
   `on-track` (< min) · `in-window` (min–max) · `past-window` (> max, no extension notice) ·
   `extended` · `update-available` (≥ 30 business days since last update) ·
   `deadline-soon` (user's deadline ≤ 2 business days away).
-- [ ] `ladder.ts`: the user marks a rung "contacted on {date}". If no reply after **5 business
+- [x] `ladder.ts`: the user marks a rung "contacted on {date}". If no reply after **5 business
   days**, show "No reply yet" and suggest the next rung. Any rung can be opened anytime.
-- [ ] Tests: day 30, 61, 91, 91 with extension, 30 days since last update, a holiday inside the
+- [x] Tests: day 30, 61, 91, 91 with extension, 30 days since last update, a holiday inside the
   range, ladder no-reply at 4 and 5 business days.
 
 **Done when:** `npm test` and `npm run build` pass.
@@ -106,7 +106,7 @@ and every-30-day figures, but not the section numbers, the exact quote, or the d
 outcome), so don't treat it as support. Get the PDF from https://policy.ucop.edu/doc/4000385/SVSH in a
 browser and add it to the repo root, next to the Stanford PDF.
 
-- [ ] `data/timelines/berkeley.ts`, source: UC SVSH Interim Policy, effective 1/1/2026. Give each
+- [x] `data/timelines/berkeley.ts`, source: UC SVSH Interim Policy, effective 1/1/2026. Give each
   rule a `verified: boolean`, starting `false`.
 
 | id | starts from | rule | cite |
@@ -118,13 +118,13 @@ browser and add it to the repo root, next to the Stanford PDF.
 
   Exact quote to store for `invest`:
   `"typically within 60 to 90 business days of notifying the parties in writing of the charges"`.
-- [ ] Check every row and the quote against the PDF. Set `verified: true` only for what matches;
+- [x] Check every row and the quote against the PDF. Set `verified: true` only for what matches;
   correct or remove what doesn't. Pay most attention to `dismissal-appeal`, because a wrong date could
   cost the user their appeal.
-- [ ] `data/ladders/berkeley.ts`, ordered rungs, all `contact: undefined`:
+- [x] `data/ladders/berkeley.ts`, ordered rungs, all `contact: undefined`:
   - School: 1 your case contact at OPHD → 2 Title IX Officer (OPHD) → 3 PATH to Care (confidential advocate, can contact them for you)
   - Police (shown only if the user toggles "I made a police report"): 1 UCPD detective → 2 UCPD supervisor → 3 Alameda County DA Victim-Witness
-- [ ] `templates.ts`, three templates, tokens only for personal details:
+- [x] `templates.ts`, three templates, tokens only for personal details:
   1. **Status request** (cites the `status` rule)
   2. **Timeline/extension request** (cites the `invest` rule, includes the quote)
   3. **Gentle follow-up** (for no reply)
@@ -136,13 +136,13 @@ browser and add it to the repo root, next to the Stanford PDF.
 
 ## Phase 3 — The `/tracker` page, with temporary stand-ins
 
-- [ ] `persistence.ts`: `load()` and `save()` for Case Clock state. For now they keep state in a
+- [x] `persistence.ts`: `load()` and `save()` for Case Clock state. For now they keep state in a
   module variable. Everything else calls only these two functions.
-- [ ] Setup (school → process → date) → vertical timeline with a status chip per stage → one nudge
+- [x] Setup (school → process → date) → vertical timeline with a status chip per stage → one nudge
   card with a "Draft email" button → ladder below. Use the existing theme (`glass`, `shadow-soft`).
   Mobile-first.
-- [ ] `DraftPanel`: for now, show the template with tokens unfilled, plus Copy.
-- [ ] Show any rule with `verified: false` as "Confirm this timeframe with OPHD".
+- [x] `DraftPanel`: for now, show the template with tokens unfilled, plus Copy.
+- [x] Show any rule with `verified: false` as "Confirm this timeframe with OPHD".
 
 **Done when:** you can go from setup to a copied draft on phone-width and desktop, with tokens still
 visible, and the page reloads to an empty state.
@@ -160,14 +160,19 @@ session mode leaves no Case Clock data in browser storage.
 
 ## Phase 5 — Demo, links, finish
 
-- [ ] Demo seed, when `/tracker?demo=1`: Berkeley investigation, police toggle on, notice 94 business
+- [x] Demo seed, when `/tracker?demo=1`: Berkeley investigation, police toggle on, notice 94 business
   days ago, last update 33 business days ago, UCPD contacted 12 business days ago with no reply. Seed
   in memory only, and never overwrite saved data. The vault owner seeds the fake personal details.
-- [ ] Add the nav entry, the home card, and the `CONTRACTS.md` row.
-- [ ] Remove or verify every rule still marked `verified: false`.
+- [x] Add the nav entry, the home card, and the `CONTRACTS.md` row.
+- [x] Remove or verify every rule still marked `verified: false`.
 
 **Done when:** `npm run build` and `npm test` pass, and the demo shows "past the usual timeframe",
 "status update available", UCPD "no reply" → next rung, and a draft that fills in after approval.
 Report what's still unverified (office names, holidays).
+
+**Status (Nov 6, 2026):** Phases 1–3 and 5 done on `main`. All four Berkeley rules were checked
+word-for-word against `UC-SVSH-Interim-Policy-2026.pdf` and are `verified: true`. Still open: Phase 4
+(waits on the vault); ladder contacts are empty by design; holidays are US federal, not UC's campus
+calendar. `components/caseclock/CaseClock.tsx` was added as the page's client container.
 
 **Later, not now:** Stanford/Cornell timelines, calendar export, contact notes, appeal-stage rules.

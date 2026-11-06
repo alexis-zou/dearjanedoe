@@ -49,6 +49,7 @@ Use these utility colors: `bg-background`, `bg-surface`, `bg-surface-muted`,
 | **B — Crisis + safety** | `app/crisis/page.tsx`, `data/hotlines.ts`, `components/{ResourceCard,QuickExitButton,GetHelpNowButton,CrisisSheet,Disclaimer}.tsx` |
 | **C — Legal chat** | `app/legal/page.tsx`, `components/{ChatWindow,MessageList,Composer,LegalAidCard}.tsx`, `data/{legalAid,consultationPrompts}.ts` |
 | **D — University + home** | `app/university/page.tsx`, `components/{SchoolPicker,PolicyView}.tsx`, `app/page.tsx` |
+| **Case Clock** | `app/tracker/page.tsx`, `components/caseclock/*`, `lib/caseclock/*`, `data/{timelines,ladders}/*` (see `CASE_CLOCK_PLAN.md`) |
 
 `app/layout.tsx` (scaffold) imports B's `QuickExitButton`, `GetHelpNowButton`, `Disclaimer`.
 Page rendering compiles once Agent B provides those three files.
