@@ -153,7 +153,7 @@ Check `main` for each item, or ask the vault owner. Do each as soon as its depen
 
 - [x] After Vault Phase 1: `persistence.ts` calls `getRecord/putRecord("caseclock")`. Handle `null`
   by showing setup.
-- [ ] After Vault Phase 3: `DraftPanel` renders through `FilledDraft`. Remove the temporary Copy.
+- [x] After Vault Phase 3: `DraftPanel` renders through `FilledDraft`. Remove the temporary Copy.
 
 **Done when:** a draft fills in after approval, saved mode restores Case Clock after unlocking, and
 session mode leaves no Case Clock data in browser storage.
@@ -170,9 +170,9 @@ session mode leaves no Case Clock data in browser storage.
 "status update available", UCPD "no reply" → next rung, and a draft that fills in after approval.
 Report what's still unverified (office names, holidays).
 
-**Status (Nov 6, 2026):** Phases 1–3 and 5 done on `main`. All four Berkeley rules were checked
-word-for-word against `UC-SVSH-Interim-Policy-2026.pdf` and are `verified: true`. Phase 4: persistence now uses the vault store;
-`FilledDraft` still waits on Vault Phase 3; ladder contacts are empty by design; holidays are US federal, not UC's campus
+**Status (Nov 6, 2026):** All phases done on `main`. All four Berkeley rules were checked
+word-for-word against `UC-SVSH-Interim-Policy-2026.pdf` and are `verified: true`. Phase 4 done: persistence uses the vault store
+and drafts render through `FilledDraft`; ladder contacts are empty by design; holidays are US federal, not UC's campus
 calendar. `components/caseclock/CaseClock.tsx` was added as the page's client container.
 
 **Later, not now:** Stanford/Cornell timelines, calendar export, contact notes, appeal-stage rules.

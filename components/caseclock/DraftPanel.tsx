@@ -1,53 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import FilledDraft from "@/components/vault/FilledDraft";
 import type { EmailTemplate } from "@/lib/caseclock/types";
-
-const READABLE: Record<string, string> = {
-  legalName: "your name",
-  preferredName: "your preferred name",
-  studentId: "your student ID",
-  schoolEmail: "your school email",
-  phone: "your phone",
-  caseNumber: "your case number",
-  investigatorName: "investigator's name",
-};
-
-/** Shows {{vault.key}} tokens as chips so it's clear what still needs filling in. */
-function withTokenChips(text: string) {
-  return text.split(/(\{\{vault\.\w+\}\})/g).map((part, i) => {
-    const m = /^\{\{vault\.(\w+)\}\}$/.exec(part);
-    if (!m) return part;
-    return (
-      <mark
-        key={i}
-        className="rounded-full bg-primary-soft px-2 py-0.5 font-sans text-[0.85em] font-medium text-foreground"
-      >
-        {READABLE[m[1]] ?? m[1]}
-        <span className="sr-only"> (placeholder)</span>
-      </mark>
-    );
-  });
-}
 
 type Props = { template: EmailTemplate; onClose: () => void };
 
 /**
- * Temporary draft view (Phase 3): tokens stay unfilled and the user copies the text.
- * Phase 4 renders through the vault's FilledDraft instead. Nothing is ever sent from here.
+ * A Case Clock email draft. FilledDraft (from the vault) shows the placeholders, asks
+ * before filling in the user's details on this device, and handles Copy / Open in email.
+ * Nothing is ever sent from here.
  */
 export default function DraftPanel({ template, onClose }: Props) {
-  const [copyStatus, setCopyStatus] = useState("");
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(`Subject: ${template.subject}\n\n${template.body}`);
-      setCopyStatus("Copied. Paste it into your email and fill in the highlighted parts.");
-    } catch {
-      setCopyStatus("We couldn't copy automatically. You can select the text and copy it yourself.");
-    }
-  }
-
   return (
     <section
       aria-labelledby="draft-heading"
@@ -71,29 +34,8 @@ export default function DraftPanel({ template, onClose }: Props) {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-4">
-        <p className="text-sm text-muted">Subject</p>
-        <p className="font-medium">{withTokenChips(template.subject)}</p>
-        <p className="mt-3 whitespace-pre-wrap break-words">{withTokenChips(template.body)}</p>
-      </div>
-
-      <p className="text-sm text-muted">
-        Highlighted words are placeholders for your details. They stay on your device. Replace
-        them before you send.
-      </p>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => void copy()}
-          className="min-h-12 rounded-full bg-primary px-6 py-2 font-medium text-primary-contrast hover:bg-primary-hover"
-        >
-          Copy draft
-        </button>
-        <p role="status" className="text-sm text-muted">
-          {copyStatus}
-        </p>
-      </div>
+      {/* key: a new draft starts fresh, so an earlier approval never carries over. */}
+      <FilledDraft key={template.id + template.body} template={template.body} subject={template.subject} />
     </section>
   );
 }
