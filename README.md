@@ -9,6 +9,10 @@ Three sections: **Crisis Support** (hotlines), **Legal Help** (grounded "Know Yo
 Rights" chatbot + legal-aid directory + consultation prep), **University Navigator**
 (Cornell / Stanford / Berkeley Title IX policy over the federal baseline).
 
+Two more features are planned and not built yet: **Case Clock** (`/tracker`, Berkeley
+timelines and draft emails) and **Vault + filing help** (`/vault`, browser-only personal
+details that fill into drafts and forms for copy and paste). See Progress.
+
 ## Stack
 Next.js (App Router, TS) · Tailwind v4 · `@anthropic-ai/sdk` · model `claude-sonnet-5`
 (server-side route, prompt-cached grounding corpus). No DB, no accounts.
@@ -24,10 +28,12 @@ npm run dev            # http://localhost:3000
 ```
 app/            layout + pages + api/chat/route.ts (AI core)
 components/      UI (safety buttons, chat, cards, school picker)
-lib/             types.ts, api.ts, prompts/system.md
+lib/             types.ts, api.ts, crisis.ts, prompts/system.md
 content/corpus/  title-ix-federal.md + cornell/stanford/berkeley.md (grounding)
 data/            hotlines, legal aid, consultation prompts
+design/          UI design reference images
 CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
+CASE_CLOCK_PLAN.md  ·  VAULT_PLAN.md  phased plans for the two features in progress
 ```
 
 ## Safety / privacy invariants
@@ -53,7 +59,14 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
 - [x] **Agent C — Legal chat + legal-aid + consultation prep:** chat UI, directory, and
       question checklist. Tested in a browser against a mock route; **live replies pending
       a real `ANTHROPIC_API_KEY`**.
-- [ ] Agent D — University navigator + home
+- [x] **Agent D — University navigator + home:** home page, school picker, policy
+      summaries, and school Q&A chat (Cornell / Stanford / Berkeley). Includes the
+      gradient-mesh + glass UI redesign.
+- [x] **Corpus update:** Cornell and Berkeley grounded in official sources (see the note below).
+- [ ] **Case Clock:** not started. One owner, five phases: `CASE_CLOCK_PLAN.md`. Its Berkeley
+      citations must be checked against the UC policy PDF before release.
+- [ ] **Vault + filing help:** not started. One owner, five phases: `VAULT_PLAN.md`. Case Clock
+      needs its store (Phase 1) and `FilledDraft` (Phase 3) for its own Phase 4.
 - [ ] Phase 2 — integration, a11y pass, verify hotlines/links, demo
 
 > Corpus note: Stanford is grounded in the official policy PDF (1.7.1, 2023-04-13), the SHARE
