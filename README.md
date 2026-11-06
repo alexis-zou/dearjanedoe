@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Know Your Rights — Survivor Support App
 
-## Getting Started
+Trauma-informed web app helping survivors of sexual assault understand their rights,
+find resources, and navigate university Title IX/VI processes. **General information,
+not legal advice.** It does not file reports, doubt accounts, advise whether to report,
+or store conversations.
 
-First, run the development server:
+Three sections: **Crisis Support** (hotlines), **Legal Help** (grounded "Know Your
+Rights" chatbot + legal-aid directory + consultation prep), **University Navigator**
+(Cornell / Stanford / Berkeley Title IX policy over the federal baseline).
 
+## Stack
+Next.js (App Router, TS) · Tailwind v4 · `@anthropic-ai/sdk` · model `claude-sonnet-5`
+(server-side route, prompt-cached grounding corpus). No DB, no accounts.
+
+## Run
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+# create .env.local with:  ANTHROPIC_API_KEY=sk-ant-...
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Layout
+```
+app/            layout + pages + api/chat/route.ts (AI core)
+components/      UI (safety buttons, chat, cards, school picker)
+lib/             types.ts, api.ts, prompts/system.md
+content/corpus/  title-ix-federal.md + cornell/stanford/berkeley.md (grounding)
+data/            hotlines, legal aid, consultation prompts
+CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Safety / privacy invariants
+- `ANTHROPIC_API_KEY` is server-only — never `NEXT_PUBLIC_`, never in the client bundle.
+- Crisis-signal messages escalate to 988 / Crisis Text Line / RAINN before anything else.
+- School answers limited to the 3 curated schools; the bot never invents policy.
+- Ephemeral chat; not a reporting channel.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Progress
+- [x] **Phase 0 — scaffold:** Next.js + Tailwind, calming theme tokens, nav/layout
+      shell, shared contracts (`lib/types.ts`, `lib/api.ts`, `CONTRACTS.md`). *Pushed.*
+- [ ] **Agent A — AI core:** grounding corpus (federal + 3 schools), system prompt /
+      guardrails, `app/api/chat/route.ts`, `.env.local`. *In progress.*
+- [ ] Agent B — Crisis section + safety buttons + disclaimer
+- [ ] Agent C — Legal chat + legal-aid + consultation prep
+- [ ] Agent D — University navigator + home
+- [ ] Phase 2 — integration, a11y pass, verify hotlines/links, demo
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Corpus note: Stanford is grounded in the official policy PDF (1.7.1, 2023-04-13);
+> federal baseline from the Public Counsel manual (as of 2026-04-01). Cornell & Berkeley
+> are grounded on published office/process info and flagged **VERIFY-BEFORE-DEMO**.
