@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, test } from "node:test";
+import { chat } from "../api.ts";
+import type { ChatRequest, Message, School } from "../types.ts";
 import { decrypt, deriveKey, encrypt, newSalt, STORAGE_KEY } from "./crypto.ts";
 import type { Envelope } from "./crypto.ts";
+import { containsVaultValue, redactOutgoing } from "./egress.ts";
+import { fill, fillForDisplay, listKeys } from "./placeholders.ts";
 import * as store from "./store.ts";
 
 // ---- localStorage doesn't exist under Node, so mock it and record every write ----
@@ -175,6 +179,146 @@ describe("saved mode", () => {
     assert.equal(await store.set("phone", "5105551234"), false);
     assert.equal(store.lastSaveFailed(), true);
     localStorage.setItem = original;
+  });
+});
+
+describe("placeholders", () => {
+  const template = "{{vault.legalName}}, {{vault.caseNumber}}, {{vault.legalName}}, {{vault.ssn}}";
+
+  test("listKeys lists known keys once", () => {
+    assert.deepEqual(listKeys(template), ["legalName", "caseNumber"]);
+  });
+
+  test("fill fills known keys and reports missing ones", () => {
+    const { text, missing } = fill(template, { legalName: "Jane Doe" });
+    assert.equal(text, "Jane Doe, {{vault.caseNumber}}, Jane Doe, {{vault.ssn}}");
+    assert.deepEqual(missing, ["caseNumber"]);
+  });
+
+  test("fill takes a $ in a value literally", () => {
+    assert.equal(fill("{{vault.legalName}}", { legalName: "J$&ne" }).text, "J$&ne");
+  });
+
+  test("fillForDisplay never shows a raw token", () => {
+    assert.equal(
+      fillForDisplay("{{vault.studentId}} {{vault.legalName}} {{vault.ssn}}", { legalName: "Jane" }),
+      "your student ID Jane your details",
+    );
+  });
+});
+
+describe("redactOutgoing", () => {
+  test("replaces a value with its token", () => {
+    assert.equal(
+      redactOutgoing("My ID is 3031234567.", { studentId: "3031234567" }),
+      "My ID is {{vault.studentId}}.",
+    );
+  });
+
+  test("doesn't touch parts of other words", () => {
+    const text = "Samantha and I are the same, sam.";
+    assert.equal(
+      redactOutgoing(text, { preferredName: "Sam" }),
+      "Samantha and I are the same, {{vault.preferredName}}.",
+    );
+  });
+
+  test("replaces the longest value first", () => {
+    assert.equal(
+      redactOutgoing("I'm Sam Lee, or Sam.", { preferredName: "Sam", legalName: "Sam Lee" }),
+      "I'm {{vault.legalName}}, or {{vault.preferredName}}.",
+    );
+  });
+
+  test("catches digits written in other ways", () => {
+    const values = { phone: "(510) 555-1234", studentId: "303-123-4567" };
+    for (const phone of ["5105551234", "510-555-1234", "510.555.1234", "+1 510 555 1234"]) {
+      assert.equal(redactOutgoing(`Call ${phone}`, values), "Call {{vault.phone}}");
+    }
+    assert.equal(redactOutgoing("ID 3031234567", values), "ID {{vault.studentId}}");
+  });
+
+  test("doesn't match digits inside a longer number", () => {
+    assert.equal(redactOutgoing("99303123456799", { studentId: "3031234567" }), "99303123456799");
+  });
+
+  test("handles punctuation in values and accented names", () => {
+    assert.equal(
+      redactOutgoing("Email Jane.Doe+x@berkeley.edu now", { schoolEmail: "jane.doe+x@berkeley.edu" }),
+      "Email {{vault.schoolEmail}} now",
+    );
+    assert.equal(
+      redactOutgoing("Case OPHD-2026-0000.", { caseNumber: "OPHD-2026-0000" }),
+      "Case {{vault.caseNumber}}.",
+    );
+    assert.equal(redactOutgoing("José and Joséphine", { preferredName: "José" }), "{{vault.preferredName}} and Joséphine");
+  });
+
+  test("skips empty values", () => {
+    assert.equal(redactOutgoing("Nothing here", { legalName: "", phone: "   " }), "Nothing here");
+  });
+
+  test("leaves existing tokens alone, whatever the values are", () => {
+    assert.equal(
+      redactOutgoing("{{vault.phone}} and vault", { preferredName: "vault", investigatorName: "phone" }),
+      "{{vault.phone}} and {{vault.preferredName}}",
+    );
+  });
+
+  test("containsVaultValue", () => {
+    assert.equal(containsVaultValue("I'm Jane", { preferredName: "Jane" }), true);
+    assert.equal(containsVaultValue("Hello", { preferredName: "Jane" }), false);
+  });
+});
+
+describe("chat", () => {
+  async function send(messages: Message[], school?: School): Promise<{ raw: string; body: ChatRequest }> {
+    let raw = "";
+    globalThis.fetch = (async (_url: string, init: RequestInit) => {
+      raw = init.body as string;
+      return Response.json({ reply: "ok" });
+    }) as typeof fetch;
+    await chat(messages, school);
+    return { raw, body: JSON.parse(raw) as ChatRequest };
+  }
+
+  for (const school of [undefined, "berkeley"] as const) {
+    test(`sends tokens, not values, in every message (school: ${school ?? "none"})`, async () => {
+      await store.set("studentId", "3031234567");
+      await store.set("legalName", "Jane Doe");
+      const { raw, body } = await send(
+        [
+          { role: "user", content: "I'm Jane Doe" },
+          { role: "assistant", content: "Hello {{vault.legalName}}" },
+          { role: "user", content: "My ID is 303-123-4567" },
+        ],
+        school,
+      );
+      assert.ok(!raw.includes("Jane Doe"));
+      assert.ok(!raw.includes("3031234567"));
+      assert.ok(!raw.includes("303-123-4567"));
+      assert.equal(body.messages[0].content, "I'm {{vault.legalName}}");
+      assert.equal(body.messages[2].content, "My ID is {{vault.studentId}}");
+      assert.equal(body.school, school);
+    });
+  }
+
+  test("history stays redacted after the vault is locked", async () => {
+    await store.set("studentId", "3031234567");
+    const first: Message = { role: "user", content: "My ID is 3031234567" };
+    await send([first]);
+
+    store.lock();
+    const { raw } = await send([first, { role: "assistant", content: "ok" }, { role: "user", content: "Thanks" }]);
+    assert.ok(!raw.includes("3031234567"));
+    assert.ok(raw.includes("{{vault.studentId}}"));
+  });
+
+  test("doesn't change the caller's messages", async () => {
+    await store.set("studentId", "3031234567");
+    const message: Message = { role: "user", content: "My ID is 3031234567" };
+    await send([message]);
+    assert.equal(message.content, "My ID is 3031234567");
   });
 });
 

@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { Message } from "@/lib/types";
+import { containsVaultValue } from "@/lib/vault/egress";
+import { fillForDisplay } from "@/lib/vault/placeholders";
+import { getAll, getVersion, subscribe } from "@/lib/vault/store";
 
 type MessageListProps = {
   messages: Message[];
@@ -17,6 +20,9 @@ function renderBold(content: string) {
 
 export default function MessageList({ messages, isLoading }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Re-render when vault values change, so filled-in text stays current.
+  useSyncExternalStore(subscribe, getVersion, () => 0);
+  const vaultValues = getAll();
 
   // Scroll only this panel, so the rest of the page stays where the reader left it.
   useEffect(() => {
@@ -43,7 +49,14 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               }`}
             >
               <span className="sr-only">{isUser ? "You said: " : "The assistant said: "}</span>
-              {isUser ? message.content : renderBold(message.content)}
+              {isUser
+                ? message.content
+                : renderBold(fillForDisplay(message.content, vaultValues))}
+              {isUser && containsVaultValue(message.content, vaultValues) && (
+                <p className="mt-2 border-t border-current/30 pt-2 text-sm">
+                  We kept your details on this device and sent placeholders instead.
+                </p>
+              )}
             </div>
           </div>
         );
