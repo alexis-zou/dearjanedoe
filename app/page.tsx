@@ -29,6 +29,15 @@ const QUICK_LINKS = [
       <path d="M12 3 2 8l10 5 10-5-10-5zM6 10.5V15c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5" />
     ),
   },
+  {
+    href: "/tracker",
+    title: "Case Clock",
+    body: "Track UC Berkeley's published timeline and draft a follow-up if things run long.",
+    accent: "from-[#c9a7f2] to-[#f4a9c8]",
+    icon: (
+      <path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+    ),
+  },
 ];
 
 export default function Home() {
@@ -72,7 +81,7 @@ export default function Home() {
       {/* ---------- Quick links to the three sections ---------- */}
       <section className="mt-14 w-full" aria-label="Explore support">
         <h2 className="text-center text-2xl font-semibold">Where would you like to go?</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {QUICK_LINKS.map((card) => (
             <Link
               key={card.href}
