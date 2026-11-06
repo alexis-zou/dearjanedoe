@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChatRequest, Message, School } from "@/lib/types";
+import { looksLikeCrisis, CRISIS_REINFORCEMENT } from "@/lib/crisis";
 
 // Route handlers run on the Node.js runtime by default — we rely on that to read the
 // corpus from the filesystem and to keep the Anthropic key server-side only
@@ -19,12 +20,13 @@ const VALID_SCHOOLS: School[] = ["cornell", "stanford", "berkeley"];
 // Keep this exact string identical across requests so prompt caching hits.
 function loadCorpus(): string {
   const root = process.cwd();
-  const read = (p: string) => readFileSync(join(root, p), "utf8");
-  const system = read("lib/prompts/system.md");
-  const federal = read("content/corpus/title-ix-federal.md");
-  const cornell = read("content/corpus/cornell.md");
-  const stanford = read("content/corpus/stanford.md");
-  const berkeley = read("content/corpus/berkeley.md");
+  // Literal paths so the bundler statically traces exactly these files
+  // (a variable path would cause it to trace/bundle the whole project).
+  const system = readFileSync(join(root, "lib/prompts/system.md"), "utf8");
+  const federal = readFileSync(join(root, "content/corpus/title-ix-federal.md"), "utf8");
+  const cornell = readFileSync(join(root, "content/corpus/cornell.md"), "utf8");
+  const stanford = readFileSync(join(root, "content/corpus/stanford.md"), "utf8");
+  const berkeley = readFileSync(join(root, "content/corpus/berkeley.md"), "utf8");
 
   return [
     system,
@@ -42,36 +44,9 @@ function loadCorpus(): string {
 
 const GROUNDING_PREFIX = loadCorpus();
 
-// Crisis signals — defense-in-depth. The system prompt already makes crisis handling
-// rule #1; this adds a non-cached reinforcement block when the latest message looks
-// like a crisis, so the safety behavior is doubly anchored. Keep the cached prefix
-// byte-stable by adding this as a SEPARATE trailing system block (not editing the prefix).
-const CRISIS_PATTERNS = [
-  /\bkill myself\b/i,
-  /\bkilling myself\b/i,
-  /\bend (my|it all|my life)\b/i,
-  /\bsuicid/i,
-  /\bself[-\s]?harm/i,
-  /\bhurt myself\b/i,
-  /\bwant to die\b/i,
-  /\bdon'?t want to (be alive|live)\b/i,
-  /\bno reason to live\b/i,
-  /\bin danger\b/i,
-  /\bhe('?s| is) going to (kill|hurt)\b/i,
-  /\bbeing (followed|stalked|threatened)\b/i,
-  /\bright now\b.*\b(scared|unsafe|hurt)\b/i,
-];
-
-const CRISIS_REINFORCEMENT =
-  "SAFETY OVERRIDE: The user's latest message may indicate crisis, self-harm, or " +
-  "immediate danger. Before anything else, respond with warmth and these resources: " +
-  "call 911 if in immediate danger; 988 Suicide & Crisis Lifeline (call or text 988); " +
-  "Crisis Text Line (text HOME to 741741); RAINN 800-656-4673. Encourage reaching a " +
-  "real person now. Do not lead with legal/process information.";
-
-function looksLikeCrisis(text: string): boolean {
-  return CRISIS_PATTERNS.some((re) => re.test(text));
-}
+// Crisis detection lives in lib/crisis.ts (unit-tested). When the latest user message
+// matches, we append a non-cached reinforcement system block — keeping the cached prefix
+// byte-stable by NOT editing it.
 
 function badRequest(error: string) {
   return Response.json({ error }, { status: 400 });

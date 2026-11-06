@@ -45,6 +45,8 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
       error paths pass; **live LLM round-trip pending a real `ANTHROPIC_API_KEY`** in
       `.env.local`.
 - [ ] Agent B — Crisis section + safety buttons + disclaimer
+      *(minimal placeholder stubs exist so the app compiles/runs: functional QuickExit,
+      GetHelpNow→/crisis, no-op Disclaimer — Agent B replaces these)*
 - [ ] Agent C — Legal chat + legal-aid + consultation prep
 - [ ] Agent D — University navigator + home
 - [ ] Phase 2 — integration, a11y pass, verify hotlines/links, demo
