@@ -47,7 +47,9 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
 - [ ] Agent B — Crisis section + safety buttons + disclaimer
       *(minimal placeholder stubs exist so the app compiles/runs: functional QuickExit,
       GetHelpNow→/crisis, no-op Disclaimer — Agent B replaces these)*
-- [ ] Agent C — Legal chat + legal-aid + consultation prep
+- [x] **Agent C — Legal chat + legal-aid + consultation prep:** chat UI, directory, and
+      question checklist. Tested in a browser against a mock route; **live replies pending
+      a real `ANTHROPIC_API_KEY`**.
 - [ ] Agent D — University navigator + home
 - [ ] Phase 2 — integration, a11y pass, verify hotlines/links, demo
 
