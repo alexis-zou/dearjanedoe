@@ -56,6 +56,9 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
 - [ ] Agent D — University navigator + home
 - [ ] Phase 2 — integration, a11y pass, verify hotlines/links, demo
 
-> Corpus note: Stanford is grounded in the official policy PDF (1.7.1, 2023-04-13);
-> federal baseline from the Public Counsel manual (as of 2026-04-01). Cornell & Berkeley
-> are grounded on published office/process info and flagged **VERIFY-BEFORE-DEMO**.
+> Corpus note: Stanford is grounded in the official policy PDF (1.7.1, 2023-04-13), the SHARE
+> FAQ, and the ASSU SHARE procedures infographic. Cornell is grounded in official Cornell Office of
+> Civil Rights Policy 6.4 documents (reporting-rights and investigation letters, resolution guide,
+> flowchart, No-Contact Order FAQ) and Policies 6.3/6.4. Berkeley is grounded in the UC SVSH Policy
+> PDF (effective 2026-01-01) plus OPHD and PATH to Care pages. Federal baseline from the Public
+> Counsel manual (as of 2026-04-01) plus ed.gov links.

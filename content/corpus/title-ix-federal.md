@@ -1,6 +1,6 @@
 # Federal Title IX / VI Baseline
 
-**As of:** 2026-04-01
+**As of:** 2026-11-06 (Public Counsel manual current as of 2026-04-01).
 **Sources:** Public Counsel, *Navigating the Title IX Process: A Guide for Student
 Survivors of Sexual Violence in College/University Settings* (published June 2026,
 current as of April 1, 2026); U.S. Department of Education, *Title IX Final Rule Overview*.
@@ -17,8 +17,12 @@ and denial of reasonable accommodations for pregnant/lactating students. Most sc
 have a Title IX office that receives and investigates reports; these proceedings are often
 called "Title IX proceedings."
 
-Note: some recent federal court rulings have limited Title IX's scope regarding gender
-identity (see *Tennessee v. Cardona*, 2025). State laws (e.g., California) may provide
+Which federal rule applies: a federal court vacated the 2024 Title IX rule in January 2025
+(*Tennessee v. Cardona*), and the Department of Education has enforced the **2020 Title IX
+regulations** since then; on **September 29, 2026** it published a final rule formally removing
+the 2024 text and restoring the 2020 regulations. This baseline describes the 2020 framework.
+
+Note: these rulings also limit Title IX's federal scope regarding gender identity. State laws (e.g., California) may provide
 additional protections based on gender identity and sexual orientation.
 
 ## What counts as sexual harassment (federal definition)
@@ -100,7 +104,8 @@ federal policy to the office.
 ## Informal resolution
 Voluntary mediation/restorative process requiring both parties' written consent. A school
 cannot require it, and it is not available where an employee allegedly harassed a student.
-Some states bar it for sexual-violence cases (e.g., California Education Code § 66262.5).
+Some states limit it — e.g., under California law and UC policy, mediation is not used in
+sexual-violence cases, though other alternative-resolution options may be.
 
 ## Deadlines & lawsuits
 There is **no statute of limitations on filing a Title IX complaint with your school** — but
@@ -108,9 +113,31 @@ the school's power to sanction shrinks once a respondent graduates or leaves, so
 schools dismiss complaints then. Separately, **civil lawsuits** (against a respondent or the
 school) have their own statutes of limitations that vary by claim and state — consult an
 attorney. Title IX is an administrative process; a civil suit can seek financial compensation.
+**Complaints to the U.S. Department of Education Office for Civil Rights (OCR) generally must be
+filed within 180 days of the last act of discrimination** (OCR can grant a waiver for good
+cause, e.g., if you were using the school's process first). File online:
+https://www.ed.gov/laws-and-policy/civil-rights-laws/file-complaint/ocr-discrimination-complaint-form
 
 ## Finding the Title IX office
 Every covered school must designate a Title IX Coordinator and publish their contact info
 and the non-discrimination policy. Search "[school name] Title IX office" or check the
 school's website. You may also file externally with the U.S. Department of Education Office
 for Civil Rights (OCR).
+
+## U.S. Department of Education (official)
+- What Title IX is: https://www.ed.gov/laws-and-policy/civil-rights-laws/title-ix-and-sex-discrimination
+- Filing a complaint with OCR: https://www.ed.gov/laws-and-policy/civil-rights-laws/file-complaint
+
+## National resources (crisis, medical, legal)
+- **RAINN National Sexual Assault Hotline: 1-800-656-4673** (24/7; online chat too) —
+  https://rainn.org/ (can also connect you to your local rape crisis center)
+- RAINN: getting medical help after sexual assault —
+  https://rainn.org/help-and-healing/if-youve-been-assaulted/getting-medical-help-after-sexual-assault/
+- RAINN: what a sexual assault forensic exam (SAFE) involves —
+  https://rainn.org/2240/getting-a-sexual-assault-forensic-exam-safe/
+- **Take Back the Night — free legal assistance** from victim-focused attorneys for survivors
+  of sexual harassment, assault, or other sexual violence: **567-SHATTER (567-742-8837)**
+- VictimRights.org pro bono legal help:
+  https://victimrights.org/make-an-impact/pro-bono/
+- State-specific resources: see each school's section (New York for Cornell; California for
+  Stanford and Berkeley).
