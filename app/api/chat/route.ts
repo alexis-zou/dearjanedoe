@@ -48,8 +48,11 @@ const GROUNDING_PREFIX = loadCorpus();
 // matches, we append a non-cached reinforcement system block — keeping the cached prefix
 // byte-stable by NOT editing it.
 
+// Replies can quote personal details, so nothing along the way may keep a copy.
+const NO_STORE = { "Cache-Control": "no-store" };
+
 function badRequest(error: string) {
-  return Response.json({ error }, { status: 400 });
+  return Response.json({ error }, { status: 400, headers: NO_STORE });
 }
 
 export async function POST(req: Request) {
@@ -93,7 +96,7 @@ export async function POST(req: Request) {
     // Never echo the key or its absence beyond a generic message.
     return Response.json(
       { error: "Server is not configured. Please try again later." },
-      { status: 500 },
+      { status: 500, headers: NO_STORE },
     );
   }
 
@@ -144,12 +147,14 @@ export async function POST(req: Request) {
         `cacheRead=${u.cache_read_input_tokens ?? 0} cacheWrite=${u.cache_creation_input_tokens ?? 0}`,
     );
 
-    return Response.json({ reply });
+    return Response.json({ reply }, { headers: NO_STORE });
   } catch (err) {
-    console.error("[/api/chat] Anthropic error:", err);
+    // Name and status only: the full error can include the request, and so the messages.
+    const { name, status } = (err ?? {}) as { name?: string; status?: number };
+    console.error(`[/api/chat] Anthropic error: name=${name} status=${status}`);
     return Response.json(
       { error: "Sorry — something went wrong generating a response. Please try again." },
-      { status: 502 },
+      { status: 502, headers: NO_STORE },
     );
   }
 }

@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import type { Message } from "@/lib/types";
+import { containsVaultValue } from "@/lib/vault/egress";
+import { fillForDisplay } from "@/lib/vault/placeholders";
+import { useVault } from "./vault/VaultProvider";
 
 type MessageListProps = {
   messages: Message[];
@@ -17,6 +20,7 @@ function renderBold(content: string) {
 
 export default function MessageList({ messages, isLoading }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { values: vaultValues } = useVault();
 
   // Scroll only this panel, so the rest of the page stays where the reader left it.
   useEffect(() => {
@@ -43,7 +47,14 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               }`}
             >
               <span className="sr-only">{isUser ? "You said: " : "The assistant said: "}</span>
-              {isUser ? message.content : renderBold(message.content)}
+              {isUser
+                ? message.content
+                : renderBold(fillForDisplay(message.content, vaultValues))}
+              {isUser && containsVaultValue(message.content, vaultValues) && (
+                <p className="mt-2 border-t border-current/30 pt-2 text-sm">
+                  We kept your details on this device and sent placeholders instead.
+                </p>
+              )}
             </div>
           </div>
         );

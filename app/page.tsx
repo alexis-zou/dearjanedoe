@@ -38,6 +38,13 @@ const QUICK_LINKS = [
       <path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
     ),
   },
+  {
+    href: "/vault",
+    title: "My details",
+    body: "Keep your details on this device and fill them into drafts and forms.",
+    accent: "from-[#8db7f0] to-[#b49cf0]",
+    icon: <path d="M6 11h12v9H6zM9 11V7a3 3 0 0 1 6 0v4" />,
+  },
 ];
 
 export default function Home() {
@@ -67,7 +74,7 @@ export default function Home() {
 
         {/* Reassurance chips */}
         <ul className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-muted">
-          {["No account needed", "Nothing is saved", "Leave anytime"].map((t) => (
+          {["No account needed", "Nothing saved unless you choose","Leave anytime"].map((t) => (
             <li
               key={t}
               className="rounded-full border border-border bg-surface/60 px-3 py-1"
@@ -81,7 +88,7 @@ export default function Home() {
       {/* ---------- Quick links to the three sections ---------- */}
       <section className="mt-14 w-full" aria-label="Explore support">
         <h2 className="text-center text-2xl font-semibold">Where would you like to go?</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {QUICK_LINKS.map((card) => (
             <Link
               key={card.href}
