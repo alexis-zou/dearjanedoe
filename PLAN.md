@@ -276,3 +276,38 @@ being populated for live answers (can scaffold its UI against stub content meanw
   tab confirms the Anthropic key never reaches the browser.
 - **a11y / responsive:** keyboard-navigable, labels read by a screen reader, text scales,
   layout holds on a phone-width viewport.
+
+---
+
+## Safety guardrails — living log (update every iteration)
+
+Treat user safety as the top priority and keep this section in sync with the code. When a
+guardrail changes, update both `lib/prompts/system.md` (and/or `app/api/chat/route.ts`) AND
+this list, so the plan never drifts from what actually ships.
+
+**Implemented (Agent A, as of 2026-11-06):**
+1. **Crisis-first, two layers.** System prompt rule #1 forces crisis/self-harm/immediate-
+   danger responses to lead with 911 / 988 / Crisis Text Line (HOME→741741) / RAINN
+   (800-656-4673) before anything else. Defense-in-depth: `route.ts` runs a crisis-pattern
+   check on the latest user message and appends a non-cached "SAFETY OVERRIDE" system block
+   reinforcing this, so the behavior is anchored even if the model under-reacts.
+2. **No doubting accounts / no report-or-not advice.** Prompt rule #3: never question an
+   account; never tell someone whether to report — lay out options neutrally, defer the
+   decision to them, point to a confidential advocate.
+3. **Hallucination control.** Prompt rule #4 + grounded corpus: answer only from the
+   federal baseline + the 3 curated schools; cite the school; for any other school, give the
+   federal baseline and how to find its Title IX office — never invent policy/offices/
+   numbers/deadlines. School docs carry "as of" dates; Cornell/Berkeley are flagged
+   VERIFY-BEFORE-DEMO (no official PDF was in the source set).
+4. **Privacy.** Prompt rule #5: don't solicit identifying/sensitive details; remind users
+   the chat isn't a confidential channel. Input caps in `route.ts` (max messages, max chars).
+5. **Not legal advice / not a reporting channel.** Prompt rule #6 + footer copy.
+6. **Key safety.** `ANTHROPIC_API_KEY` server-only; `.env.local` gitignored; generic error
+   messages never leak key state.
+
+**Backlog / next safety iterations (candidates):**
+- Surface a persistent "Get Help Now" affordance inside the chat view itself (Agent B/C).
+- Client-side crisis keyword nudge before the request even leaves the browser.
+- Rate limiting / abuse protection on `/api/chat`.
+- Link-out verification pass on every hotline/office number before demo.
+- Consider logging-free telemetry only; confirm no message content is persisted anywhere.

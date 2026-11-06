@@ -39,8 +39,11 @@ CONTRACTS.md     fixed API + data shapes   ·   PLAN.md  full build plan
 ## Progress
 - [x] **Phase 0 — scaffold:** Next.js + Tailwind, calming theme tokens, nav/layout
       shell, shared contracts (`lib/types.ts`, `lib/api.ts`, `CONTRACTS.md`). *Pushed.*
-- [ ] **Agent A — AI core:** grounding corpus (federal + 3 schools), system prompt /
-      guardrails, `app/api/chat/route.ts`, `.env.local`. *In progress.*
+- [x] **Agent A — AI core:** grounding corpus (federal + 3 schools), trauma-informed
+      system prompt / guardrails, `app/api/chat/route.ts` (validation + prompt-cached
+      corpus + crisis defense-in-depth), `.env.example`. Route verified: validation +
+      error paths pass; **live LLM round-trip pending a real `ANTHROPIC_API_KEY`** in
+      `.env.local`.
 - [ ] Agent B — Crisis section + safety buttons + disclaimer
 - [ ] Agent C — Legal chat + legal-aid + consultation prep
 - [ ] Agent D — University navigator + home

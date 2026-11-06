@@ -1,0 +1,173 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import Anthropic from "@anthropic-ai/sdk";
+import type { ChatRequest, Message, School } from "@/lib/types";
+
+// Route handlers run on the Node.js runtime by default — we rely on that to read the
+// corpus from the filesystem and to keep the Anthropic key server-side only
+// (never NEXT_PUBLIC_, never sent to the browser). `cacheComponents` in next.config
+// disallows an explicit `export const runtime`, so we don't set one.
+
+const MODEL = "claude-sonnet-5";
+const MAX_TOKENS = 1024;
+const MAX_MESSAGES = 40;
+const MAX_CHARS_PER_MESSAGE = 8000;
+
+const VALID_SCHOOLS: School[] = ["cornell", "stanford", "berkeley"];
+
+// ---- Build the byte-stable grounding prefix ONCE at module load ----
+// Keep this exact string identical across requests so prompt caching hits.
+function loadCorpus(): string {
+  const root = process.cwd();
+  const read = (p: string) => readFileSync(join(root, p), "utf8");
+  const system = read("lib/prompts/system.md");
+  const federal = read("content/corpus/title-ix-federal.md");
+  const cornell = read("content/corpus/cornell.md");
+  const stanford = read("content/corpus/stanford.md");
+  const berkeley = read("content/corpus/berkeley.md");
+
+  return [
+    system,
+    "\n\n===== GROUNDING CORPUS (answer only from this) =====\n",
+    "## FEDERAL BASELINE\n",
+    federal,
+    "\n\n## SCHOOL: CORNELL\n",
+    cornell,
+    "\n\n## SCHOOL: STANFORD\n",
+    stanford,
+    "\n\n## SCHOOL: BERKELEY\n",
+    berkeley,
+  ].join("\n");
+}
+
+const GROUNDING_PREFIX = loadCorpus();
+
+// Crisis signals — defense-in-depth. The system prompt already makes crisis handling
+// rule #1; this adds a non-cached reinforcement block when the latest message looks
+// like a crisis, so the safety behavior is doubly anchored. Keep the cached prefix
+// byte-stable by adding this as a SEPARATE trailing system block (not editing the prefix).
+const CRISIS_PATTERNS = [
+  /\bkill myself\b/i,
+  /\bkilling myself\b/i,
+  /\bend (my|it all|my life)\b/i,
+  /\bsuicid/i,
+  /\bself[-\s]?harm/i,
+  /\bhurt myself\b/i,
+  /\bwant to die\b/i,
+  /\bdon'?t want to (be alive|live)\b/i,
+  /\bno reason to live\b/i,
+  /\bin danger\b/i,
+  /\bhe('?s| is) going to (kill|hurt)\b/i,
+  /\bbeing (followed|stalked|threatened)\b/i,
+  /\bright now\b.*\b(scared|unsafe|hurt)\b/i,
+];
+
+const CRISIS_REINFORCEMENT =
+  "SAFETY OVERRIDE: The user's latest message may indicate crisis, self-harm, or " +
+  "immediate danger. Before anything else, respond with warmth and these resources: " +
+  "call 911 if in immediate danger; 988 Suicide & Crisis Lifeline (call or text 988); " +
+  "Crisis Text Line (text HOME to 741741); RAINN 800-656-4673. Encourage reaching a " +
+  "real person now. Do not lead with legal/process information.";
+
+function looksLikeCrisis(text: string): boolean {
+  return CRISIS_PATTERNS.some((re) => re.test(text));
+}
+
+function badRequest(error: string) {
+  return Response.json({ error }, { status: 400 });
+}
+
+export async function POST(req: Request) {
+  let body: ChatRequest;
+  try {
+    body = (await req.json()) as ChatRequest;
+  } catch {
+    return badRequest("Invalid JSON body.");
+  }
+
+  const { messages, school } = body ?? {};
+
+  // ---- Validate input ----
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return badRequest("`messages` must be a non-empty array.");
+  }
+  if (messages.length > MAX_MESSAGES) {
+    return badRequest("Too many messages in one request.");
+  }
+  const clean: Message[] = [];
+  for (const m of messages) {
+    if (
+      !m ||
+      (m.role !== "user" && m.role !== "assistant") ||
+      typeof m.content !== "string"
+    ) {
+      return badRequest("Each message needs role 'user'|'assistant' and string content.");
+    }
+    const content = m.content.slice(0, MAX_CHARS_PER_MESSAGE).trim();
+    if (content) clean.push({ role: m.role, content });
+  }
+  if (clean.length === 0 || clean[clean.length - 1].role !== "user") {
+    return badRequest("The last message must be from the user.");
+  }
+  if (school !== undefined && !VALID_SCHOOLS.includes(school)) {
+    return badRequest("Unknown school.");
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    // Never echo the key or its absence beyond a generic message.
+    return Response.json(
+      { error: "Server is not configured. Please try again later." },
+      { status: 500 },
+    );
+  }
+
+  // ---- Tell the model which school via the user turn (keeps the cached prefix stable) ----
+  const outgoing = clean.map((m) => ({ ...m }));
+  const last = outgoing[outgoing.length - 1];
+  const schoolName =
+    school === "cornell" ? "Cornell" : school === "stanford" ? "Stanford" : school === "berkeley" ? "Berkeley" : null;
+  if (schoolName) {
+    last.content = `${last.content}\n\n[School context: ${schoolName}]`;
+  }
+
+  // ---- System blocks: cached grounding prefix (+ optional non-cached crisis block) ----
+  const systemBlocks: Anthropic.TextBlockParam[] = [
+    {
+      type: "text",
+      text: GROUNDING_PREFIX,
+      cache_control: { type: "ephemeral", ttl: "1h" },
+    },
+  ];
+  if (looksLikeCrisis(last.content)) {
+    systemBlocks.push({ type: "text", text: CRISIS_REINFORCEMENT });
+  }
+
+  const anthropic = new Anthropic({ apiKey });
+
+  try {
+    const resp = await anthropic.messages.create(
+      {
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        system: systemBlocks,
+        messages: outgoing,
+      },
+      { headers: { "anthropic-beta": "extended-cache-ttl-2025-04-11" } },
+    );
+
+    const reply = resp.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("")
+      .trim();
+
+    return Response.json({ reply });
+  } catch (err) {
+    console.error("[/api/chat] Anthropic error:", err);
+    return Response.json(
+      { error: "Sorry — something went wrong generating a response. Please try again." },
+      { status: 502 },
+    );
+  }
+}
